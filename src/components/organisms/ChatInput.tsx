@@ -1,13 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { Paperclip, Send, X } from "lucide-react";
+import { Paperclip, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/atoms/Button";
 import { FileAttachment } from "@/components/molecules/FileAttachment";
+import { FilePreview } from "@/components/molecules/FilePreview";
+import { UploadProgress } from "@/components/molecules/UploadProgress";
 import { useChatQuery } from "@/lib/use-chat-query";
 import { useChat } from "@/lib/chat-context";
+import { useScreenshotPaste } from "@/lib/hooks/useScreenshotPaste";
 import { Attachment } from "@/lib/types";
+import { validateFile } from "@/lib/file-utils";
 
 export interface ChatInputProps {
   placeholder?: string;
@@ -16,6 +20,12 @@ export interface ChatInputProps {
   maxFileSize?: number; // in MB
   allowedFileTypes?: string[];
   className?: string;
+}
+
+interface FileUploadState {
+  file: File;
+  progress: number;
+  status: "uploading" | "processing" | "error" | "complete";
 }
 
 /**
@@ -35,9 +45,28 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [message, setMessage] = React.useState("");
   const [files, setFiles] = React.useState<File[]>([]);
   const [attachments, setAttachments] = React.useState<Attachment[]>([]);
-  const [isUploading, setIsUploading] = React.useState(false);
+  const [uploadStates, setUploadStates] = React.useState<Record<string, FileUploadState>>({});
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  // Disable the input if processing
+  const isDisabled = disabled || isProcessing || Object.values(uploadStates).some(
+    state => state.status === "uploading" || state.status === "processing"
+  );
+
+  // Use screenshot paste hook
+  useScreenshotPaste({
+    onPaste: (file) => {
+      const validation = validateFile(file, maxFileSize * 1024 * 1024, allowedFileTypes);
+      if (validation.isValid) {
+        setFiles((prevFiles) => [...prevFiles, file]);
+      } else {
+        console.error(validation.error);
+      }
+    },
+    maxSize: maxFileSize * 1024 * 1024,
+    enabled: allowFiles && !isDisabled,
+  });
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,11 +74,49 @@ const ChatInput: React.FC<ChatInputProps> = ({
     if (message.trim() || attachments.length > 0) {
       // Upload any files that haven't been uploaded yet
       if (files.length > 0) {
-        setIsUploading(true);
         try {
           const newAttachments = await Promise.all(
             files.map(async (file) => {
-              return await uploadFile(file);
+              // Create upload state for this file
+              const fileId = `${file.name}-${Date.now()}`;
+              setUploadStates(prev => ({
+                ...prev,
+                [fileId]: { file, progress: 0, status: "uploading" }
+              }));
+
+              try {
+                // Simulate upload progress
+                const progressInterval = setInterval(() => {
+                  setUploadStates(prev => {
+                    const current = prev[fileId];
+                    if (current && current.status === "uploading" && current.progress < 90) {
+                      return {
+                        ...prev,
+                        [fileId]: { ...current, progress: current.progress + 10 }
+                      };
+                    }
+                    return prev;
+                  });
+                }, 500);
+
+                // Upload the file
+                const result = await uploadFile(file);
+
+                // Clear interval and set complete
+                clearInterval(progressInterval);
+                setUploadStates(prev => ({
+                  ...prev,
+                  [fileId]: { file, progress: 100, status: "complete" }
+                }));
+
+                return result;
+              } catch (error) {
+                setUploadStates(prev => ({
+                  ...prev,
+                  [fileId]: { file, progress: 0, status: "error" }
+                }));
+                throw error;
+              }
             })
           );
           
@@ -58,10 +125,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
           
           // Send the message with attachments
           await sendMessage(message.trim(), allAttachments);
+
+          // Clear upload states
+          setUploadStates({});
         } catch (error) {
           console.error("Error uploading files:", error);
-        } finally {
-          setIsUploading(false);
         }
       } else {
         // Send the message with existing attachments
@@ -82,9 +150,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
       
       // Filter files by type and size
       const validFiles = selectedFiles.filter((file) => {
-        const isValidType = allowedFileTypes.includes(file.type) || allowedFileTypes.includes("*");
-        const isValidSize = file.size <= maxFileSize * 1024 * 1024;
-        return isValidType && isValidSize;
+        const validation = validateFile(file, maxFileSize * 1024 * 1024, allowedFileTypes);
+        if (!validation.isValid) {
+          console.error(`Error with file ${file.name}:`, validation.error);
+        }
+        return validation.isValid;
       });
       
       setFiles((prevFiles) => [...prevFiles, ...validFiles]);
@@ -106,19 +176,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
     setAttachments((prevAttachments) => prevAttachments.filter((attachment) => attachment.id !== id));
   };
 
-  // Handle pasting files (e.g., screenshots)
-  const handlePaste = (e: React.ClipboardEvent) => {
-    if (!allowFiles) return;
-    
-    const items = e.clipboardData.items;
-    const imageItems = Array.from(items).filter((item) => item.type.startsWith("image/"));
-    
-    if (imageItems.length > 0) {
-      const files = imageItems.map((item) => item.getAsFile()).filter(Boolean) as File[];
-      setFiles((prevFiles) => [...prevFiles, ...files]);
-    }
-  };
-
   // Auto-resize textarea
   React.useEffect(() => {
     if (textareaRef.current) {
@@ -127,39 +184,40 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   }, [message]);
 
-  // Disable the input if processing or uploading
-  const isDisabled = disabled || isProcessing || isUploading;
-
   return (
     <form
       onSubmit={handleSubmit}
       className={cn("flex flex-col space-y-2 w-full", className)}
     >
-      {/* File attachments */}
+      {/* File previews */}
       {(files.length > 0 || attachments.length > 0) && (
-        <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-md">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-2 bg-muted/50 rounded-md">
           {files.map((file, index) => (
-            <FileAttachment
+            <FilePreview
               key={`file-${index}`}
-              file={{
-                name: file.name,
-                type: file.type,
-                url: URL.createObjectURL(file),
-                size: file.size,
-              }}
+              file={file}
               onRemove={() => handleRemoveFile(index)}
             />
           ))}
           {attachments.map((attachment) => (
             <FileAttachment
               key={`attachment-${attachment.id}`}
-              file={{
-                name: attachment.name,
-                type: attachment.type,
-                url: attachment.url,
-                size: attachment.size,
-              }}
+              file={attachment}
               onRemove={() => handleRemoveAttachment(attachment.id)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Upload progress */}
+      {Object.entries(uploadStates).length > 0 && (
+        <div className="space-y-2">
+          {Object.entries(uploadStates).map(([id, state]) => (
+            <UploadProgress
+              key={id}
+              fileName={state.file.name}
+              progress={state.progress}
+              status={state.status}
             />
           ))}
         </div>
@@ -172,7 +230,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onPaste={handlePaste}
             placeholder={placeholder}
             disabled={isDisabled}
             className="w-full p-3 pr-10 resize-none min-h-[50px] max-h-[200px] rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"

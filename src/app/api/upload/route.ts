@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
 import { writeFile } from 'fs/promises';
-import path from 'path';
-import { mkdir } from 'fs/promises';
+import { join } from 'path';
+import { nanoid } from 'nanoid';
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 /**
  * API route for file uploads
@@ -16,52 +21,44 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       return NextResponse.json(
-        { message: 'No file provided' },
+        { error: 'No file provided' },
         { status: 400 }
       );
     }
 
-    // Generate a unique ID for the file
-    const id = uuidv4();
-    
-    // Get the file extension
-    const extension = path.extname(file.name);
-    
-    // Create a unique filename
-    const filename = `${id}${extension}`;
-    
-    // Convert the file to a Buffer
-    const buffer = Buffer.from(await file.arrayBuffer());
-    
-    // Create the uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    await mkdir(uploadsDir, { recursive: true });
-    
-    // Write the file to the uploads directory
-    await writeFile(path.join(uploadsDir, filename), buffer);
-    
-    // Generate the URL for the file
-    const url = `/uploads/${filename}`;
-    
-    // Generate a preview URL for images
-    let previewUrl = null;
-    if (file.type.startsWith('image/')) {
-      previewUrl = url;
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: 'File size exceeds 10MB limit' },
+        { status: 400 }
+      );
     }
-    
-    // Return the file information
+
+    // Generate unique filename
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${nanoid()}.${fileExt}`;
+    const filePath = join(process.cwd(), 'public', 'uploads', fileName);
+
+    // Create buffer from file
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // Write file to disk
+    await writeFile(filePath, buffer);
+
+    // Return file metadata
     return NextResponse.json({
-      id,
+      id: nanoid(),
       name: file.name,
       type: file.type,
-      url,
       size: file.size,
-      previewUrl,
+      url: `/uploads/${fileName}`,
     });
   } catch (error) {
-    console.error('Error in upload API:', error);
+    console.error('Error uploading file:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { error: 'Error uploading file' },
       { status: 500 }
     );
   }

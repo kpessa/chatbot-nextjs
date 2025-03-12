@@ -10,7 +10,6 @@ export interface Attachment {
   type: string;
   url: string;
   size: number;
-  previewUrl?: string;
 }
 
 export interface Message {
@@ -45,4 +44,24 @@ export interface ChatState {
   isProcessing: boolean;
   error: string | null;
   settings: ChatSettings;
+}
+
+/**
+ * Configuration options for file uploads
+ */
+export interface FileUploadConfig {
+  maxSize: number;
+  allowedTypes: string[];
+  multiple?: boolean;
+}
+
+/**
+ * Response from the file upload API
+ */
+export interface FileUploadResponse {
+  id: string;
+  name: string;
+  type: string;
+  url: string;
+  size: number;
 } 
