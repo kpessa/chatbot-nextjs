@@ -1,0 +1,13 @@
+# <type>(<scope>): <subject>
+# |<---- Using a maximum of 50 characters ---->|
+# 
+# Example types: feat, fix, docs, style, refactor, test, chore
+# Example scopes: message-bubble, chat-input, model-selector, etc.
+# 
+# Explain what this commit does below (if needed):
+# |<---- Try to limit each line to a maximum of 72 characters ---->|
+# 
+# 
+# Include any breaking changes or issues closed:
+# BREAKING CHANGE: <description>
+# Closes #<issue number> 
