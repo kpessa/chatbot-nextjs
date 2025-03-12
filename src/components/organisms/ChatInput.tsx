@@ -5,9 +5,11 @@ import { Paperclip, Send, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/atoms/Button";
 import { FileAttachment } from "@/components/molecules/FileAttachment";
+import { useChatQuery } from "@/lib/use-chat-query";
+import { useChat } from "@/lib/chat-context";
+import { Attachment } from "@/lib/types";
 
 export interface ChatInputProps {
-  onSendMessage: (message: string, files?: File[]) => void;
   placeholder?: string;
   disabled?: boolean;
   allowFiles?: boolean;
@@ -21,7 +23,6 @@ export interface ChatInputProps {
  * with support for text input, file attachments, and screenshot pasting.
  */
 const ChatInput: React.FC<ChatInputProps> = ({
-  onSendMessage,
   placeholder = "Type your message...",
   disabled = false,
   allowFiles = true,
@@ -29,18 +30,48 @@ const ChatInput: React.FC<ChatInputProps> = ({
   allowedFileTypes = ["image/png", "image/jpeg", "application/pdf", "text/plain"],
   className,
 }) => {
+  const { state } = useChat();
+  const { sendMessage, uploadFile, isProcessing } = useChatQuery();
   const [message, setMessage] = React.useState("");
   const [files, setFiles] = React.useState<File[]>([]);
+  const [attachments, setAttachments] = React.useState<Attachment[]>([]);
+  const [isUploading, setIsUploading] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() || files.length > 0) {
-      onSendMessage(message.trim(), files.length > 0 ? files : undefined);
+    if (message.trim() || attachments.length > 0) {
+      // Upload any files that haven't been uploaded yet
+      if (files.length > 0) {
+        setIsUploading(true);
+        try {
+          const newAttachments = await Promise.all(
+            files.map(async (file) => {
+              return await uploadFile(file);
+            })
+          );
+          
+          // Add the new attachments to the existing ones
+          const allAttachments = [...attachments, ...newAttachments];
+          
+          // Send the message with attachments
+          await sendMessage(message.trim(), allAttachments);
+        } catch (error) {
+          console.error("Error uploading files:", error);
+        } finally {
+          setIsUploading(false);
+        }
+      } else {
+        // Send the message with existing attachments
+        await sendMessage(message.trim(), attachments.length > 0 ? attachments : undefined);
+      }
+      
+      // Clear the input
       setMessage("");
       setFiles([]);
+      setAttachments([]);
     }
   };
 
@@ -50,39 +81,41 @@ const ChatInput: React.FC<ChatInputProps> = ({
       const selectedFiles = Array.from(e.target.files);
       
       // Filter files by type and size
-      const validFiles = selectedFiles.filter(file => {
+      const validFiles = selectedFiles.filter((file) => {
         const isValidType = allowedFileTypes.includes(file.type) || allowedFileTypes.includes("*");
         const isValidSize = file.size <= maxFileSize * 1024 * 1024;
         return isValidType && isValidSize;
       });
       
-      setFiles(prev => [...prev, ...validFiles]);
-      
-      // Reset the file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      setFiles((prevFiles) => [...prevFiles, ...validFiles]);
+    }
+    
+    // Reset the input value so the same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
-  // Handle file removal
+  // Handle removing a file
   const handleRemoveFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
+    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
 
-  // Handle paste event for screenshots
+  // Handle removing an attachment
+  const handleRemoveAttachment = (id: string) => {
+    setAttachments((prevAttachments) => prevAttachments.filter((attachment) => attachment.id !== id));
+  };
+
+  // Handle pasting files (e.g., screenshots)
   const handlePaste = (e: React.ClipboardEvent) => {
     if (!allowFiles) return;
     
     const items = e.clipboardData.items;
+    const imageItems = Array.from(items).filter((item) => item.type.startsWith("image/"));
     
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf("image") !== -1) {
-        const file = items[i].getAsFile();
-        if (file && file.size <= maxFileSize * 1024 * 1024) {
-          setFiles(prev => [...prev, file]);
-        }
-      }
+    if (imageItems.length > 0) {
+      const files = imageItems.map((item) => item.getAsFile()).filter(Boolean) as File[];
+      setFiles((prevFiles) => [...prevFiles, ...files]);
     }
   };
 
@@ -94,90 +127,101 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   }, [message]);
 
+  // Disable the input if processing or uploading
+  const isDisabled = disabled || isProcessing || isUploading;
+
   return (
-    <div className={cn("border-t", className)}>
+    <form
+      onSubmit={handleSubmit}
+      className={cn("flex flex-col space-y-2 w-full", className)}
+    >
       {/* File attachments */}
-      {files.length > 0 && (
-        <div className="p-2 border-b">
-          <div className="flex flex-wrap gap-2">
-            {files.map((file, index) => (
-              <div key={`${file.name}-${index}`} className="w-full sm:w-48">
-                <FileAttachment
-                  file={{
-                    name: file.name,
-                    type: file.type,
-                    url: URL.createObjectURL(file),
-                    size: file.size,
-                  }}
-                  onRemove={() => handleRemoveFile(index)}
-                />
-              </div>
-            ))}
-          </div>
+      {(files.length > 0 || attachments.length > 0) && (
+        <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-md">
+          {files.map((file, index) => (
+            <FileAttachment
+              key={`file-${index}`}
+              file={{
+                name: file.name,
+                type: file.type,
+                url: URL.createObjectURL(file),
+                size: file.size,
+              }}
+              onRemove={() => handleRemoveFile(index)}
+            />
+          ))}
+          {attachments.map((attachment) => (
+            <FileAttachment
+              key={`attachment-${attachment.id}`}
+              file={{
+                name: attachment.name,
+                type: attachment.type,
+                url: attachment.url,
+                size: attachment.size,
+              }}
+              onRemove={() => handleRemoveAttachment(attachment.id)}
+            />
+          ))}
         </div>
       )}
 
-      {/* Input form */}
-      <form onSubmit={handleSubmit} className="p-2">
-        <div className="flex items-end gap-2">
-          <div className="relative flex-1">
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onPaste={handlePaste}
-              placeholder={placeholder}
-              disabled={disabled}
-              className={cn(
-                "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-                "ring-offset-background placeholder:text-muted-foreground",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                "disabled:cursor-not-allowed disabled:opacity-50",
-                "resize-none min-h-[40px] max-h-[200px] overflow-y-auto"
-              )}
-              rows={1}
-            />
-            
-            {/* File attachment button */}
-            {allowFiles && (
-              <div className="absolute bottom-2 right-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  onChange={handleFileChange}
-                  multiple
-                  accept={allowedFileTypes.join(",")}
-                  className="hidden"
-                  id="file-upload"
-                  disabled={disabled}
-                />
-                <label
-                  htmlFor="file-upload"
-                  className={cn(
-                    "inline-flex items-center justify-center rounded-md p-1",
-                    "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                    "cursor-pointer",
-                    disabled && "opacity-50 cursor-not-allowed pointer-events-none"
-                  )}
-                >
-                  <Paperclip className="w-4 h-4" />
-                </label>
-              </div>
-            )}
-          </div>
-          
-          {/* Send button */}
-          <Button
-            type="submit"
-            disabled={disabled || (!message.trim() && files.length === 0)}
-            size="icon"
-            className="h-10 w-10"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
+      {/* Input area */}
+      <div className="flex items-end space-x-2">
+        <div className="relative flex-1">
+          <textarea
+            ref={textareaRef}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onPaste={handlePaste}
+            placeholder={placeholder}
+            disabled={isDisabled}
+            className="w-full p-3 pr-10 resize-none min-h-[50px] max-h-[200px] rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            rows={1}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+          />
         </div>
-      </form>
-    </div>
+
+        {/* File upload button */}
+        {allowFiles && (
+          <>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              multiple
+              accept={allowedFileTypes.join(",")}
+              className="hidden"
+              disabled={isDisabled}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isDisabled}
+              className="h-10 w-10"
+            >
+              <Paperclip className="h-5 w-5" />
+            </Button>
+          </>
+        )}
+
+        {/* Send button */}
+        <Button
+          type="submit"
+          disabled={isDisabled || (message.trim() === "" && files.length === 0 && attachments.length === 0)}
+          className="h-10 w-10"
+          size="icon"
+        >
+          <Send className="h-5 w-5" />
+        </Button>
+      </div>
+    </form>
   );
 };
 

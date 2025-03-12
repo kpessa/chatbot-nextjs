@@ -51,22 +51,19 @@
 - [x] Git workflow improvements (2025-03-12)
   - [x] Add commit message template (2025-03-12)
   - [x] Configure Git to use commit template (2025-03-12)
+- [x] Implement core functionality (2025-03-12)
+  - [x] Create React context for chat state (2025-03-12)
+  - [x] Set up React Query or SWR for API calls (2025-03-12)
+  - [x] Implement message rendering (2025-03-12)
+  - [x] Implement user input handling (2025-03-12)
+  - [x] Add screenshot paste functionality (2025-03-12)
+- [x] Create API Routes (2025-03-12)
+  - [x] Set up model proxy route (2025-03-12)
+  - [x] Create API key validation middleware (2025-03-12)
+  - [x] Implement file upload endpoint (2025-03-12)
+  - [x] Error handling and rate limiting (2025-03-12)
 
 ## In Progress
-- [ ] Implement core functionality
-  - [ ] Create React context for chat state
-  - [ ] Set up React Query or SWR for API calls
-  - [ ] Implement message rendering
-  - [ ] Implement user input handling
-  - [ ] Add screenshot paste functionality
-
-## Planned
-- [ ] Create API Routes
-  - [ ] Set up model proxy route
-  - [ ] Create API key validation middleware
-  - [ ] Implement file upload endpoint
-  - [ ] Error handling and rate limiting
-
 - [ ] API integration
   - [ ] Create API services 
   - [ ] OpenAI/ChatGPT integration
@@ -74,6 +71,7 @@
   - [ ] Deepseek integration
   - [ ] Error handling and recovery
 
+## Planned
 - [ ] File handling
   - [ ] File upload implementation
   - [ ] Screenshot paste functionality
