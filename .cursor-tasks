@@ -93,8 +93,19 @@
 
 ## In Progress
 - [ ] Testing and Quality Assurance
-  - [ ] Unit tests for core functionality
-  - [ ] Integration tests for API endpoints
+  - [x] Unit tests for core functionality (2025-03-12, commit: pending)
+    - [x] File utils tests
+    - [x] API service tests
+    - [x] Chat context tests
+  - [x] Integration tests for chat and settings (2025-03-12, commit: pending)
+    - [x] Chat integration tests
+      - [x] Message sending flow
+      - [x] File upload handling
+      - [x] Error handling
+    - [x] Settings integration tests
+      - [x] Settings persistence
+      - [x] Theme handling
+      - [x] Model selection
   - [ ] End-to-end testing with Cypress
   - [ ] Performance testing and optimization
 
