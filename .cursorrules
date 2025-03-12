@@ -1,0 +1,139 @@
+# .cursor-rules
+
+These rules guide the development of our LLM Chat Interface using Next.js with ShadCN components, ensuring clean, maintainable, and consistent code with proper version control.
+
+## Next.js Project Structure
+
+- Use the App Router for modern Next.js features
+- Follow the `/app` directory structure conventions
+- Place reusable components in `/components` directory
+- Use the `/lib` directory for utility functions and shared logic
+- Create API routes in `/app/api` for backend functionality
+- Organize pages logically with appropriate routing
+
+## Code Structure & Organization
+
+- Use atomic design principles (atoms, molecules, organisms, templates, pages)
+- Keep components focused on a single responsibility
+- Maximum file length: 300 lines
+- Maximum function length: 50 lines
+- Separate business logic from UI components
+- Use custom hooks for complex logic
+- Group related files in feature-based directories
+
+## React & TypeScript Usage
+
+- Use functional components with hooks
+- Implement proper TypeScript interfaces for all components
+- Prefer explicit typing over inferred types for props
+- Consider server vs. client components carefully
+- Add "use client" directive only where necessary
+- Use React Server Components where appropriate
+- Keep state management clean with appropriate hooks
+
+## ShadCN Components
+
+- Follow ShadCN component installation patterns for Next.js
+- Use the ShadCN CLI for adding components
+- Use ShadCN's theming system consistently
+- Extend ShadCN components rather than modifying them directly
+- Document any component variants created beyond ShadCN defaults
+- Maintain ShadCN's accessibility features
+- Use ShadCN's naming conventions for consistency
+
+## Component Guidelines
+
+- Props should be clearly defined with TypeScript interfaces
+- Components should have a clear purpose described in a comment
+- Components that manage their own state should use custom hooks
+- Include default prop values where appropriate
+- Use children and composition patterns effectively
+
+## Styling
+
+- Use Tailwind utility classes as per ShadCN patterns
+- Group Tailwind classes by category (layout, typography, colors, etc.)
+- Use cn() utility for conditional classes
+- Maintain ShadCN design tokens and variables
+- Keep responsive design consistent with ShadCN patterns
+
+## Performance
+
+- Memoize expensive computations with useMemo
+- Prevent unnecessary rerenders with useCallback
+- Use proper dependency arrays in useEffect
+- Implement virtualization for long lists
+- Use Next.js Image component for optimized images
+- Use lazy loading for components not needed on initial render
+- Take advantage of Next.js automatic code-splitting
+
+## API Handling
+
+- All API calls must use try/catch for error handling
+- Create API routes in `/app/api` directory
+- Use React Query or SWR for data fetching and client state management
+- Implement retries for transient failures
+- Keep API service layer separate from UI components
+- Store API keys and endpoints in Next.js environment variables
+
+## Environment Variables
+
+- Store sensitive information in `.env.local` (not committed to Git)
+- Use `.env` for default, non-sensitive values
+- Prefix client-side variables with `NEXT_PUBLIC_`
+- Document all environment variables in `.env.example`
+- Validate environment variables on application startup
+
+## Git Workflow
+
+- Commit after each completed story or significant component milestone
+- Write descriptive commit messages following conventional commits:
+  - Format: `type(scope): description`
+  - Types: feat, fix, docs, style, refactor, test, chore
+  - Example: `feat(message-bubble): add support for code blocks`
+- Keep commits focused on a single logical change
+- Include component screenshots in commit descriptions for UI changes
+- Create a new branch for each major feature
+
+## Storybook Guidelines
+
+- Create stories for each component using CSF format
+- Include stories for all significant component states and variants
+- Use the `autodocs` tag for basic documentation
+- Test components in isolation before integration
+- Commit after each story is completed and tested
+- Include "use client" directive as needed in stories
+
+## Testing
+
+- All components should have corresponding Storybook stories
+- Include basic unit tests for complex logic
+- Test edge cases (loading, error, empty states)
+- Mock API calls in tests to avoid real network requests
+- Use appropriate testing libraries for Next.js
+
+## Naming Conventions
+
+- Components: PascalCase (e.g., `MessageBubble.tsx`)
+- Hooks: camelCase with 'use' prefix (e.g., `useApi.ts`)
+- Files: Match the component name (e.g., `MessageBubble.tsx`)
+- Stories: Match component name with `.stories.tsx` suffix
+- Functions: Descriptive verbs (e.g., `fetchMessages` not `getMessages`)
+- Boolean variables: 'is', 'has', or 'should' prefix (e.g., `isLoading`)
+- Page files: `page.tsx` in appropriate route directories
+
+## Comments & Documentation
+
+- Each component should have a header comment explaining its purpose
+- Complex logic should include explanatory comments
+- Include a README for complex feature directories
+- Document any non-obvious design decisions
+- Remove TODO comments before commits
+
+## Task Tracking
+
+- Update the `.cursor-tasks` file after each completed task
+- Begin each session by reviewing the `.cursor-tasks` file
+- Mark tasks as completed with timestamps and commit hashes
+- Break down complex tasks into smaller subtasks
+- Document any architectural decisions in the task comments

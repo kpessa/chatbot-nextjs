@@ -1,0 +1,87 @@
+# LLM Chat Interface Development Tasks
+
+## Completed
+- [x] Initial project planning and tech stack selection (2025-03-11)
+- [x] Decision to use Next.js with ShadCN components (2025-03-11)
+- [x] Decision to use Storybook with Fast Testing approach (2025-03-11)
+- [x] Git workflow setup decision (2025-03-11)
+- [x] Project setup (2025-03-12)
+  - [x] Initialize Git repository (2025-03-12)
+  - [x] Create Next.js app with TypeScript (2025-03-12)
+  - [x] Configure Tailwind CSS (2025-03-12)
+  - [x] Install and set up ShadCN UI (2025-03-12)
+  - [x] Set up Storybook for Next.js (2025-03-12)
+  - [x] Create initial project structure with atomic design folders (2025-03-12)
+  - [x] Make initial commit (project scaffold) (2025-03-12)
+- [x] Next.js App Configuration (2025-03-12)
+  - [x] Set up app router structure (2025-03-12)
+  - [x] Configure environment variables (2025-03-12)
+  - [x] Create basic layout component (2025-03-12)
+  - [x] Set up API route structure (2025-03-12)
+- [x] ShadCN Component Installation and Configuration (2025-03-12)
+  - [x] Install core ShadCN dependencies using CLI (2025-03-12)
+  - [x] Set up theming and global styles (2025-03-12)
+  - [x] Configure component registry (2025-03-12)
+- [x] Create custom atomic components (2025-03-12)
+  - [x] Button component with stories (2025-03-12)
+  - [x] Input component with stories (2025-03-12)
+  - [x] Message bubble component with stories (2025-03-12)
+  - [x] File attachment component with stories (2025-03-12)
+  - [x] Dropdown selector component with stories (2025-03-12)
+- [x] Build composite components (2025-03-12)
+  - [x] Message list component (2025-03-12)
+    - [x] Implementation with virtualization (2025-03-12)
+    - [x] Stories (2025-03-12)
+  - [x] Input area with file upload (2025-03-12)
+    - [x] Implementation (2025-03-12)
+    - [x] Stories (2025-03-12)
+  - [x] Model selector component (2025-03-12)
+    - [x] Implementation (2025-03-12)
+    - [x] Stories (2025-03-12)
+  - [x] Chat header component (2025-03-12)
+    - [x] Implementation (2025-03-12)
+    - [x] Stories (2025-03-12)
+  - [x] Settings panel component (2025-03-12)
+    - [x] Implementation (2025-03-12)
+    - [x] Stories (2025-03-12)
+- [x] Page Routes and Navigation (2025-03-12)
+  - [x] Main chat page (2025-03-12)
+  - [x] Settings page (2025-03-12)
+  - [x] Navigation between pages (2025-03-12)
+
+## In Progress
+- [ ] Implement core functionality
+  - [ ] Create React context for chat state
+  - [ ] Set up React Query or SWR for API calls
+  - [ ] Implement message rendering
+  - [ ] Implement user input handling
+  - [ ] Add screenshot paste functionality
+
+## Planned
+- [ ] Create API Routes
+  - [ ] Set up model proxy route
+  - [ ] Create API key validation middleware
+  - [ ] Implement file upload endpoint
+  - [ ] Error handling and rate limiting
+
+- [ ] API integration
+  - [ ] Create API services 
+  - [ ] OpenAI/ChatGPT integration
+  - [ ] Anthropic/Claude integration
+  - [ ] Deepseek integration
+  - [ ] Error handling and recovery
+
+- [ ] File handling
+  - [ ] File upload implementation
+  - [ ] Screenshot paste functionality
+  - [ ] File preview rendering
+
+- [ ] Settings and configuration
+  - [ ] API key management with environment variables
+  - [ ] Model settings panel using ShadCN components
+  - [ ] Theme customization using ShadCN theming
+
+- [ ] Deployment and finalization
+  - [ ] Vercel deployment setup
+  - [ ] Environment variable configuration
+  - [ ] Final testing and optimization
