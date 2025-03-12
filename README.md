@@ -1,126 +1,120 @@
 # LLM Chat Interface
 
-A modern, customizable chat interface for interacting with large language models. Built with Next.js, TypeScript, Tailwind CSS, and ShadCN UI components.
-
-![LLM Chat Interface Screenshot](https://via.placeholder.com/800x450.png?text=LLM+Chat+Interface)
+A modern, customizable chat interface for interacting with large language models, built with Next.js and ShadCN UI.
 
 ## Features
 
-- 🤖 Support for multiple AI models (OpenAI, Anthropic, Deepseek, etc.)
-- 📁 File attachment support for images, PDFs, and text files
-- 🎨 Customizable themes with light and dark mode
-- ⚙️ Configurable settings for API keys and model parameters
-- 📱 Responsive design for desktop and mobile
-- 🧩 Component-driven architecture with Storybook
-- 🔄 Real-time streaming responses
-- 💾 Local storage for chat history
+- 🤖 Support for multiple LLM providers (OpenAI, Anthropic, DeepSeek)
+- 🎨 Beautiful UI with ShadCN components
+- 🌓 Light/Dark mode with system preference support
+- ⚡ Real-time streaming responses
+- 📁 File attachment support
+- ⚙️ Customizable model settings
+- 💾 Persistent chat history
+- 🔒 Secure API key management
+- 📱 Responsive design
+
+## Tech Stack
+
+- [Next.js 14](https://nextjs.org/) - React framework
+- [ShadCN UI](https://ui.shadcn.com/) - Component library
+- [Tailwind CSS](https://tailwindcss.com/) - Styling
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- [Zustand](https://zustand-demo.pmnd.rs/) - State management
+- [React Query](https://tanstack.com/query/latest) - Data fetching
+- [Sonner](https://sonner.emilkowal.ski/) - Toast notifications
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18.0.0 or later
+- Node.js 18.17 or later
 - npm or yarn
 
 ### Installation
 
 1. Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/llm-chat-interface.git
-cd llm-chat-interface
-```
+   ```bash
+   git clone https://github.com/yourusername/llm-chat-interface.git
+   cd llm-chat-interface
+   ```
 
 2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-```bash
-npm install
-# or
-yarn install
-```
+3. Copy the environment variables file:
+   ```bash
+   cp .env.example .env.local
+   ```
 
-3. Create a `.env.local` file in the root directory and add your API keys:
+4. Configure your environment variables in `.env.local`
 
-```
-NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key
-NEXT_PUBLIC_ANTHROPIC_API_KEY=your_anthropic_api_key
-NEXT_PUBLIC_DEEPSEEK_API_KEY=your_deepseek_api_key
-```
+5. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-4. Start the development server:
+6. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+## Deployment
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+### Deploying to Vercel
 
-## Project Structure
+1. Push your code to a GitHub repository
 
-```
-/
-├── public/              # Static assets
-├── src/
-│   ├── app/             # Next.js app router pages
-│   ├── components/      # React components
-│   │   ├── atoms/       # Basic UI components
-│   │   ├── molecules/   # Composite components
-│   │   ├── organisms/   # Complex components
-│   │   ├── templates/   # Page layouts
-│   │   └── ui/          # ShadCN UI components
-│   ├── lib/             # Utility functions and hooks
-│   └── styles/          # Global styles
-├── .storybook/          # Storybook configuration
-└── stories/             # Storybook stories
-```
+2. Visit [Vercel](https://vercel.com) and create a new project
 
-## Component Architecture
+3. Import your GitHub repository
 
-The project follows the Atomic Design methodology:
+4. Configure environment variables in Vercel project settings:
+   - Add all variables from `.env.example`
+   - Update `NEXT_PUBLIC_APP_URL` to your production URL
 
-- **Atoms**: Basic building blocks like buttons, inputs, and labels
-- **Molecules**: Groups of atoms functioning together (e.g., ModelSelector)
-- **Organisms**: Complex UI components (e.g., ChatInput, MessageList)
-- **Templates**: Page layouts that arrange organisms (e.g., ChatInterface)
-- **Pages**: Specific instances of templates with real data
+5. Deploy!
+
+### Environment Variables
+
+Required environment variables:
+
+- `NEXT_PUBLIC_APP_URL`: Your application URL
+- `RATE_LIMIT_MAX_REQUESTS`: Maximum API requests per window
+- `RATE_LIMIT_WINDOW_MS`: Rate limiting window in milliseconds
+- At least one of:
+  - `OPENAI_API_KEY`: OpenAI API key
+  - `ANTHROPIC_API_KEY`: Anthropic API key
+  - `DEEPSEEK_API_KEY`: DeepSeek API key
+
+Optional environment variables:
+- `NEXT_PUBLIC_ANALYTICS_ID`: Analytics tracking ID
+- `OPENAI_ORG_ID`: OpenAI organization ID
 
 ## Development
 
-### Running Storybook
+### Project Structure
 
-To view and develop components in isolation:
-
-```bash
-npm run storybook
-# or
-yarn storybook
+```
+src/
+├── app/              # Next.js app router pages
+├── components/       # React components
+│   ├── ui/          # ShadCN UI components
+│   └── ...          # Custom components
+├── lib/             # Utilities and hooks
+│   ├── stores/      # Zustand stores
+│   └── ...          # Other utilities
+└── styles/          # Global styles
 ```
 
-Then open [http://localhost:6006](http://localhost:6006) in your browser.
+### Commands
 
-### Building for Production
-
-```bash
-npm run build
-# or
-yarn build
-```
-
-## Customization
-
-### Themes
-
-The application uses Tailwind CSS for styling with ShadCN UI components. You can customize the theme in the `tailwind.config.js` file.
-
-### Adding New Models
-
-To add support for new AI models, update the models array in the chat page component.
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run format` - Format code with Prettier
 
 ## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
@@ -130,7 +124,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
