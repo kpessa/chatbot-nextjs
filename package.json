@@ -71,7 +71,7 @@
     "cypress": "^14.2.0",
     "eslint": "^9",
     "eslint-config-next": "15.2.2",
-    "eslint-plugin-storybook": "^0.11.4",
+    "eslint-plugin-storybook": "^1.0.1",
     "jsdom": "^26.0.0",
     "playwright": "^1.51.0",
     "storybook": "^8.6.4",
