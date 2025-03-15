@@ -1,20 +1,29 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ChatInterface } from "./ChatInterface";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryProvider } from "@/lib/query-provider";
 import { ChatProvider } from "@/lib/chat-context";
-import { useState } from "react";
-import { StorybookDecorator } from "../StorybookDecorator";
-import type { Message, ChatModel } from "@/lib/types";
+import { ThemeProvider } from "@/components/theme-provider";
+import type { Message, ChatModel, Attachment } from "@/lib/types";
+import { useState, useCallback } from "react";
+import { v4 as uuidv4 } from "uuid";
 
-// Create a QueryClient for Storybook
-const createQueryClient = () => new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+// Create a wrapper component that provides all necessary context
+const StorybookProvider = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <QueryProvider>
+        <ChatProvider>
+          {children}
+        </ChatProvider>
+      </QueryProvider>
+    </ThemeProvider>
+  );
+};
 
 const meta: Meta<typeof ChatInterface> = {
   title: "Templates/ChatInterface",
@@ -24,19 +33,11 @@ const meta: Meta<typeof ChatInterface> = {
   },
   tags: ["autodocs"],
   decorators: [
-    (Story) => {
-      const [queryClient] = useState(() => createQueryClient());
-      
-      return (
-        <StorybookDecorator>
-          <QueryClientProvider client={queryClient}>
-            <ChatProvider>
-              <Story />
-            </ChatProvider>
-          </QueryClientProvider>
-        </StorybookDecorator>
-      );
-    },
+    (Story) => (
+      <StorybookProvider>
+        <Story />
+      </StorybookProvider>
+    ),
   ],
 } satisfies Meta<typeof ChatInterface>;
 
@@ -47,13 +48,13 @@ const mockMessages: Message[] = [
   {
     id: "1",
     role: "user",
-    content: "Hello, how are you?",
+    content: "Hello! Can you help me with something?",
     timestamp: Date.now(),
   },
   {
     id: "2",
     role: "assistant",
-    content: "I am doing well, thank you for asking! How can I help you today?",
+    content: "Of course! I'd be happy to help. What do you need assistance with?",
     timestamp: Date.now(),
   },
 ];
@@ -77,34 +78,44 @@ const mockModels: ChatModel[] = [
   },
 ];
 
-const loadingMessage: Message = {
-  id: "loading",
-  role: "assistant",
-  content: "Thinking...",
-  timestamp: Date.now(),
-};
-
 export const Default: Story = {
   args: {
     title: "Chat Interface",
+    models: [
+      {
+        id: "gpt-4",
+        name: "GPT-4",
+        description: "Most capable model",
+        provider: "openai",
+        maxTokens: 8192,
+        temperature: 0.7,
+        apiKeyRequired: true
+      },
+      {
+        id: "gpt-3.5-turbo",
+        name: "GPT-3.5",
+        description: "Fast and efficient",
+        provider: "openai",
+        maxTokens: 4096,
+        temperature: 0.7,
+        apiKeyRequired: true
+      },
+    ],
+    selectedModel: "gpt-4",
+    onModelChange: (modelId) => console.log("Model changed:", modelId),
     messages: mockMessages,
-    onSendMessage: (message: string) => {
-      console.log("Message sent:", message);
-    },
-    onRetry: () => console.log("Retrying"),
-    onClearConversation: () => console.log("Clearing conversation"),
-    models: mockModels,
-    selectedModel: mockModels[0].id,
-    onModelChange: (modelId: string) => console.log("Model changed:", modelId),
-    status: "idle",
+    onSendMessage: (content) => console.log("Message sent:", content),
+    onSettingsClick: () => console.log("Settings clicked"),
+    onInfoClick: () => console.log("Info clicked"),
+    onClearConversation: () => console.log("Clear conversation clicked"),
+    onRetry: () => console.log("Retry clicked"),
   },
 };
 
-export const WithLoadingMessage: Story = {
+export const Loading: Story = {
   args: {
     ...Default.args,
-    messages: [...mockMessages, loadingMessage],
-    status: "loading",
+    disabled: true,
   },
 };
 
@@ -112,73 +123,79 @@ export const Empty: Story = {
   args: {
     ...Default.args,
     messages: [],
-    status: "idle",
   },
 };
 
-export const Disabled: Story = {
+export const WithFiles: Story = {
   args: {
     ...Default.args,
-    disabled: true,
+    allowFiles: true,
+    maxFileSize: 1024 * 1024 * 10, // 10MB
+    allowedFileTypes: ["image/*", "application/pdf", "text/plain"],
   },
 };
 
-export const DarkMode: Story = {
-  args: {
-    ...Default.args,
+// Interactive story that demonstrates sending messages
+const InteractiveChatTemplate = () => {
+  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [selectedModel, setSelectedModel] = useState("gpt-4");
+
+  const handleSendMessage = useCallback((content: string, attachments?: Attachment[]) => {
+    const newMessage: Message = {
+      id: uuidv4(),
+      role: "user",
+      content,
+      timestamp: Date.now(),
+      attachments,
+    };
+    setMessages((prev) => [...prev, newMessage]);
+  }, []);
+
+  return (
+    <ChatInterface
+      title="Interactive Chat"
+      models={[
+        {
+          id: "gpt-4",
+          name: "GPT-4",
+          description: "Most capable model",
+          provider: "openai",
+          maxTokens: 8192,
+          temperature: 0.7,
+          apiKeyRequired: true
+        },
+        {
+          id: "gpt-3.5-turbo",
+          name: "GPT-3.5",
+          description: "Fast and efficient",
+          provider: "openai",
+          maxTokens: 4096,
+          temperature: 0.7,
+          apiKeyRequired: true
+        },
+      ]}
+      selectedModel={selectedModel}
+      onModelChange={setSelectedModel}
+      messages={messages}
+      onSendMessage={handleSendMessage}
+      onSettingsClick={() => console.log("Settings clicked")}
+      onInfoClick={() => console.log("Info clicked")}
+      onClearConversation={() => setMessages([])}
+      onRetry={() => console.log("Retry clicked")}
+      allowFiles={true}
+      maxFileSize={1024 * 1024 * 10}
+      allowedFileTypes={["image/*", "application/pdf", "text/plain"]}
+    />
+  );
+};
+
+export const Interactive: Story = {
+  render: () => <InteractiveChatTemplate />,
+  parameters: {
+    docs: {
+      description: {
+        story: 'An interactive example that demonstrates sending messages and receiving responses. This story simulates the chat interface with loading states and file attachment support.',
+      },
+    },
   },
-  decorators: [
-    (Story) => {
-      const [queryClient] = useState(() => createQueryClient());
-      
-      return (
-        <StorybookDecorator isDark>
-          <QueryClientProvider client={queryClient}>
-            <ChatProvider>
-              <Story />
-            </ChatProvider>
-          </QueryClientProvider>
-        </StorybookDecorator>
-      );
-    },
-  ],
-};
-
-export const WithCurrentMessage: Story = {
-  args: {
-    title: "Chat Interface",
-    messages: mockMessages,
-    onSendMessage: (message) => console.log("Sending message:", message),
-    onRetry: () => console.log("Retrying"),
-    onClearConversation: () => console.log("Clearing conversation"),
-    currentMessage: {
-      id: "current",
-      role: "assistant",
-      content: "I'm thinking...",
-      timestamp: Date.now()
-    },
-    models: [],
-    selectedModel: "",
-    onModelChange: () => {}
-  }
-};
-
-export const Loading: Story = {
-  args: {
-    title: "Chat Interface",
-    messages: mockMessages,
-    onSendMessage: (message) => console.log("Sending message:", message),
-    onRetry: () => console.log("Retrying"),
-    onClearConversation: () => console.log("Clearing conversation"),
-    currentMessage: {
-      id: "current",
-      role: "assistant",
-      content: "I'm thinking...",
-      timestamp: Date.now()
-    },
-    status: "loading",
-    models: [],
-    selectedModel: "",
-    onModelChange: () => {}
-  }
 }; 

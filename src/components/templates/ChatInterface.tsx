@@ -3,7 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { ChatHeader } from "@/components/organisms/ChatHeader";
-import { MessageList, type Message as MessageListMessage } from "@/components/organisms/MessageList";
+import { MessageList } from "@/components/organisms/MessageList";
 import { ChatInput } from "@/components/organisms/ChatInput";
 import { Message, Attachment, ChatModel } from "@/lib/types";
 import { enableVerboseLogging, disableVerboseLogging, debugLog } from "@/lib/debug";
@@ -17,13 +17,11 @@ export interface ChatInterfaceProps {
   selectedModel: string;
   onModelChange: (modelId: string) => void;
   messages: Message[];
-  currentMessage?: Message;
   onSendMessage: (message: string, attachments?: Attachment[]) => void;
-  onRetry?: () => void;
-  onClearConversation: () => void;
-  status?: "idle" | "loading" | "error";
   onSettingsClick?: () => void;
   onInfoClick?: () => void;
+  onClearConversation?: () => void;
+  onRetry?: () => void;
   allowFiles?: boolean;
   maxFileSize?: number;
   allowedFileTypes?: string[];
@@ -41,13 +39,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   selectedModel,
   onModelChange,
   messages,
-  currentMessage,
   onSendMessage,
-  onRetry,
-  onClearConversation,
-  status = "idle",
   onSettingsClick,
   onInfoClick,
+  onClearConversation,
+  onRetry,
   allowFiles,
   maxFileSize,
   allowedFileTypes,
@@ -84,7 +80,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [selectedModel, models]);
 
   // Convert ChatMessage type to MessageList Message type for display
-  const displayMessages: MessageListMessage[] = messages.map(msg => {
+  const displayMessages: Message[] = messages.map(msg => {
     debugLog('Processing message', {
       id: msg.id,
       role: msg.role,

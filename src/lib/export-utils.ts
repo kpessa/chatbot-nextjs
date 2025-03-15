@@ -12,7 +12,7 @@ import { Message } from './types';
 export function exportAsText(messages: Message[]): string {
   return messages
     .map((message) => {
-      const timestamp = new Date(message.timestamp).toLocaleString();
+      const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleString() : 'No timestamp';
       return `[${timestamp}] ${message.role}: ${message.content}`;
     })
     .join('\n\n');
@@ -35,7 +35,7 @@ export function exportAsJSON(messages: Message[]): string {
 export function exportAsHTML(messages: Message[]): string {
   const messageElements = messages
     .map((message) => {
-      const timestamp = new Date(message.timestamp).toLocaleString();
+      const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleString() : 'No timestamp';
       const role = message.role === 'user' ? 'You' : 'AI';
       const roleClass = message.role === 'user' ? 'user-message' : 'ai-message';
       
@@ -83,14 +83,11 @@ export function exportAsHTML(messages: Message[]): string {
 export function exportAsMarkdown(messages: Message[]): string {
   return messages
     .map((message) => {
-      const timestamp = new Date(message.timestamp).toLocaleString();
+      const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleString() : 'No timestamp';
       const role = message.role === 'user' ? 'You' : 'AI';
-      
-      return `## ${role} (${timestamp})
-
-${message.content}`;
+      return `### ${role} (${timestamp})\n\n${message.content}\n`;
     })
-    .join('\n\n---\n\n');
+    .join('\n\n');
 }
 
 /**
