@@ -17,7 +17,8 @@ import {
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useSettings } from "@/lib/stores/settings";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { debugLog } from "@/lib/debug";
 
 const API_PROVIDERS = {
   openai: "OpenAI",
@@ -31,12 +32,32 @@ export default function SettingsPage() {
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
 
   const handleApiKeyChange = (provider: keyof typeof API_PROVIDERS, value: string) => {
+    debugLog('Settings: API key change', {
+      provider,
+      hasValue: !!value,
+      valueLength: value.length
+    });
+
     if (value === "") {
       settings.removeApiKey(provider);
+      debugLog('Settings: Removed API key', { provider });
     } else {
-      settings.setApiKey(provider, value);
+      settings.setApiKey(provider, value.trim());
+      debugLog('Settings: Saved API key', { 
+        provider,
+        keyLength: value.trim().length
+      });
     }
   };
+
+  // Add effect to initialize API keys from environment if not set
+  useEffect(() => {
+    debugLog('Settings: Checking initial API keys', {
+      hasOpenAIKey: !!settings.apiKeys.openai,
+      hasAnthropicKey: !!settings.apiKeys.anthropic,
+      hasDeepseekKey: !!settings.apiKeys.deepseek,
+    });
+  }, [settings.apiKeys]);
 
   const handleBack = () => {
     router.back();
@@ -58,13 +79,19 @@ export default function SettingsPage() {
     setTestingProvider(provider);
     
     try {
-      const apiKey = settings.apiKeys[provider as keyof typeof settings.apiKeys];
+      const apiKey = settings.apiKeys[provider as keyof typeof settings.apiKeys]?.trim();
       
       if (!apiKey) {
         toast.error(`No API key provided for ${provider}`);
         setTestingProvider(null);
         return;
       }
+
+      debugLog('Settings: Testing API connection', {
+        provider,
+        hasKey: !!apiKey,
+        keyLength: apiKey.length
+      });
       
       // Create a simple test request based on the provider
       const response = await fetch('/api/test-connection', {
@@ -81,11 +108,17 @@ export default function SettingsPage() {
       const data = await response.json();
       
       if (response.ok) {
+        debugLog('Settings: API test successful', { provider });
         toast.success(`Successfully connected to ${provider} API`);
       } else {
+        debugLog('Settings: API test failed', { provider, error: data.message });
         toast.error(`Failed to connect to ${provider} API: ${data.message}`);
       }
     } catch (error) {
+      debugLog('Settings: API test error', { 
+        provider, 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       toast.error(`Error testing connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setTestingProvider(null);

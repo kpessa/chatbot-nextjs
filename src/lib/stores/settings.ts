@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, PersistOptions } from 'zustand/middleware'
 import { StateCreator } from 'zustand'
+import { debugLog } from '@/lib/debug'
 
 export interface Settings {
   apiKeys: {
@@ -42,28 +43,65 @@ export const useSettings = create<SettingsStore>()(
   (persist as SettingsStorePersist)(
     (set): SettingsStore => ({
       ...initialSettings,
-      setApiKey: (provider: keyof Settings['apiKeys'], key: string) =>
-        set((state: SettingsStore) => ({
+      setApiKey: (provider: keyof Settings['apiKeys'], key: string) => {
+        debugLog('Settings Store: Setting API key', {
+          provider,
+          hasKey: !!key,
+          keyLength: key.length
+        });
+        set((state) => ({
+          ...state,
           apiKeys: {
             ...state.apiKeys,
             [provider]: key,
           },
-        })),
-      removeApiKey: (provider: keyof Settings['apiKeys']) =>
-        set((state: SettingsStore) => {
+        }));
+      },
+      removeApiKey: (provider: keyof Settings['apiKeys']) => {
+        debugLog('Settings Store: Removing API key', { provider });
+        set((state) => {
           const newApiKeys = { ...state.apiKeys }
           delete newApiKeys[provider]
-          return { apiKeys: newApiKeys }
-        }),
+          return { ...state, apiKeys: newApiKeys }
+        })
+      },
       updateSettings: (newSettings: Partial<Settings>) =>
-        set((state: SettingsStore) => ({
+        set((state) => ({
           ...state,
           ...newSettings,
         })),
-      resetSettings: () => set(initialSettings),
+      resetSettings: () => {
+        debugLog('Settings Store: Resetting all settings');
+        set(initialSettings)
+      },
     }),
     {
       name: 'chat-settings',
+      version: 1,
+      migrate: (persistedState: unknown, version: number): SettingsStore => {
+        debugLog('Settings Store: Migrating state', { version });
+        const state = persistedState as Partial<Settings>;
+        return {
+          ...initialSettings,
+          ...state,
+          setApiKey: useSettings.getState().setApiKey,
+          removeApiKey: useSettings.getState().removeApiKey,
+          updateSettings: useSettings.getState().updateSettings,
+          resetSettings: useSettings.getState().resetSettings,
+        };
+      },
+      onRehydrateStorage: () => {
+        debugLog('Settings Store: Rehydrating from storage');
+        return (state) => {
+          if (state) {
+            debugLog('Settings Store: Rehydrated state', {
+              hasOpenAIKey: !!state.apiKeys.openai,
+              hasAnthropicKey: !!state.apiKeys.anthropic,
+              hasDeepseekKey: !!state.apiKeys.deepseek,
+            });
+          }
+        };
+      },
     }
   )
 ) 

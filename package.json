@@ -76,7 +76,7 @@
     "playwright": "^1.51.0",
     "storybook": "^8.6.4",
     "tailwindcss": "^4",
-    "typescript": "^5",
+    "typescript": "^5.8.2",
     "vitest": "^3.0.8"
   },
   "eslintConfig": {

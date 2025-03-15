@@ -4,13 +4,13 @@ import * as React from "react";
 import { Settings, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/atoms/Button";
-import { ModelSelector, type Model } from "@/components/molecules/ModelSelector";
+import { ModelSelector } from "@/components/molecules/ModelSelector";
 import { ExportMenu } from "@/components/molecules/ExportMenu";
-import { Message } from "@/lib/types";
+import { Message, ChatModel } from "@/lib/types";
 
 export interface ChatHeaderProps {
   title?: string;
-  models: Model[];
+  models: ChatModel[];
   selectedModel: string;
   onModelChange: (modelId: string) => void;
   onSettingsClick?: () => void;

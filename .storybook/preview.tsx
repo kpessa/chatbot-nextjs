@@ -5,16 +5,30 @@ import "./reset.css";
 import "../src/app/globals.css";
 import "./storybook.css";
 import "./components.css";
-import { cn } from "../src/lib/utils";
+import { ChatProvider } from "../src/lib/chat-context";
+import { QueryProvider } from "../src/lib/query-provider";
+import { ThemeProvider } from "../src/components/theme-provider";
+import type { Decorator } from "@storybook/react";
 
 // Add any global decorators here
-const withThemeProvider = (Story, context) => {
+const withProviders: Decorator = (StoryFn) => {
   return (
-    <div className="p-4">
-      <div className="bg-background text-foreground rounded-md p-4">
-        <Story />
-      </div>
-    </div>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <QueryProvider>
+        <ChatProvider>
+          <div className="p-4">
+            <div className="bg-background text-foreground rounded-md p-4">
+              <StoryFn />
+            </div>
+          </div>
+        </ChatProvider>
+      </QueryProvider>
+    </ThemeProvider>
   );
 };
 
@@ -42,7 +56,7 @@ const preview: Preview = {
     },
   },
   decorators: [
-    withThemeProvider,
+    withProviders,
     withThemeByClassName({
       themes: {
         light: "",

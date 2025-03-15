@@ -4,23 +4,8 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { MessageBubble } from "@/components/molecules/MessageBubble";
 import { FileAttachment } from "@/components/molecules/FileAttachment";
-
-export type MessageFile = {
-  id: string;
-  name: string;
-  type: string;
-  url: string;
-  size: number;
-};
-
-export type Message = {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant' | 'system';
-  timestamp: number;
-  attachments?: MessageFile[];
-  isLoading?: boolean;
-};
+import { Message } from "@/lib/types";
+import { debugLog } from "@/lib/debug";
 
 export interface MessageListProps {
   messages: Message[];
@@ -34,6 +19,18 @@ export interface MessageListProps {
 const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
+  // Debug log messages when they change
+  React.useEffect(() => {
+    messages.forEach(message => {
+      debugLog('Processing message', {
+        id: message.id,
+        role: message.role,
+        hasAttachments: !!message.attachments?.length,
+        isLoading: message.isLoading
+      });
+    });
+  }, [messages]);
+
   // Scroll to bottom when messages change
   React.useEffect(() => {
     if (messagesEndRef.current) {
@@ -42,12 +39,22 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
   }, [messages]);
 
   // Format timestamp
-  const formatTimestamp = (timestamp: string) => {
+  const formatTimestamp = (timestamp: string | number | undefined) => {
+    if (!timestamp) return '';
+    
     try {
       const date = new Date(timestamp);
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    } catch {
-      return timestamp; // Return as is if it's already formatted
+      if (isNaN(date.getTime())) {
+        return '';
+      }
+      return date.toLocaleTimeString([], { 
+        hour: "2-digit", 
+        minute: "2-digit",
+        hour12: true 
+      });
+    } catch (error) {
+      debugLog('Error formatting timestamp', { timestamp, error });
+      return '';
     }
   };
 
@@ -65,7 +72,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
           <MessageBubble
             content={message.content}
             isUser={message.role === 'user'}
-            timestamp={formatTimestamp(message.timestamp.toString())}
+            timestamp={formatTimestamp(message.timestamp)}
             isLoading={message.isLoading}
           />
 

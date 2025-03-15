@@ -5,41 +5,39 @@
 export type MessageRole = 'user' | 'assistant' | 'system';
 
 export interface Attachment {
-  id: string;
   name: string;
   type: string;
-  url: string;
   size: number;
+  url?: string;
 }
 
 export interface Message {
-  id: string;
+  id?: string;
   content: string;
   role: MessageRole;
-  timestamp: number;
-  attachments?: Attachment[];
+  timestamp?: number;
   isLoading?: boolean;
   error?: string;
+  attachments?: Attachment[];
 }
 
 export interface ChatModel {
   id: string;
   name: string;
-  provider: 'openai' | 'anthropic' | 'deepseek' | 'custom';
+  provider: 'openai' | 'anthropic' | 'deepseek';
   maxTokens: number;
   temperature: number;
   apiKeyRequired: boolean;
-  description?: string;
-  supportsFiles?: boolean;
-  fileTypes?: string[];
 }
 
 export interface ChatSettings {
   selectedModel: ChatModel;
   temperature: number;
   maxTokens: number;
-  apiKeys: Record<string, string>;
-  theme: string;
+  theme: 'light' | 'dark' | 'system';
+  apiKeys: {
+    [key: string]: string;
+  };
 }
 
 export interface ChatState {
@@ -47,6 +45,8 @@ export interface ChatState {
   isProcessing: boolean;
   error: string | null;
   settings: ChatSettings;
+  availableModels: ChatModel[];
+  selectedModel: ChatModel | null;
 }
 
 /**
@@ -61,10 +61,16 @@ export interface FileUploadConfig {
 /**
  * Response from the file upload API
  */
-export interface FileUploadResponse {
+export interface FileUploadResponse extends Attachment {
   id: string;
-  name: string;
-  type: string;
   url: string;
-  size: number;
+}
+
+export type MessageUpdate = Partial<Message>;
+
+export interface APIResponse {
+  id: string;
+  content: string;
+  role: MessageRole;
+  timestamp?: number;
 } 

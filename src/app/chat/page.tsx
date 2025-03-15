@@ -118,21 +118,26 @@ export default function ChatPage() {
 
   // Handle sending a message
   const handleSendMessage = async (content: string, attachments?: Attachment[]) => {
-    debugLog('ChatPage: Sending message', { 
+    debugLog('ChatPage: Starting handleSendMessage', { 
       content, 
       attachmentCount: attachments?.length,
       selectedModel: state.settings.selectedModel,
-      apiKey: settings.apiKeys[state.settings.selectedModel.provider as keyof typeof settings.apiKeys] ? 'present' : 'missing'
+      apiKey: (state.settings.selectedModel.provider === 'openai' || 
+               state.settings.selectedModel.provider === 'anthropic' || 
+               state.settings.selectedModel.provider === 'deepseek') ? 
+               (settings.apiKeys[state.settings.selectedModel.provider]?.trim() ? 'present' : 'missing') : 
+               'not-required',
+      isProcessing
     });
     
     // Validate API key before sending
     const provider = state.settings.selectedModel.provider;
     if (provider === 'openai' || provider === 'anthropic' || provider === 'deepseek') {
-      const apiKey = settings.apiKeys[provider];
+      const apiKey = settings.apiKeys[provider]?.trim();
       
       if (!apiKey && state.settings.selectedModel.apiKeyRequired) {
         const error = `API key required for ${state.settings.selectedModel.name}`;
-        debugLog('ChatPage: Error sending message', { error });
+        debugLog('ChatPage: Error - API key missing', { provider, modelName: state.settings.selectedModel.name });
         toast.error(error, {
           action: {
             label: 'Settings',
@@ -144,6 +149,7 @@ export default function ChatPage() {
     }
     
     try {
+      debugLog('ChatPage: Attempting to send message via useChatQuery.sendMessage');
       await sendMessage(content, attachments);
       debugLog('ChatPage: Message sent successfully');
     } catch (error) {

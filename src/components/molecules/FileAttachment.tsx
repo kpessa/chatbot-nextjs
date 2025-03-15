@@ -3,14 +3,10 @@
 import * as React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { Attachment } from "@/lib/types";
 
 export interface FileAttachmentProps {
-  file: {
-    name: string;
-    type: string;
-    url: string;
-    size?: number;
-  };
+  file: Attachment;
   className?: string;
   onRemove?: () => void;
 }
