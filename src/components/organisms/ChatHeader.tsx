@@ -5,6 +5,8 @@ import { Settings, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/atoms/Button";
 import { ModelSelector, type Model } from "@/components/molecules/ModelSelector";
+import { ExportMenu } from "@/components/molecules/ExportMenu";
+import { Message } from "@/lib/types";
 
 export interface ChatHeaderProps {
   title?: string;
@@ -13,6 +15,7 @@ export interface ChatHeaderProps {
   onModelChange: (modelId: string) => void;
   onSettingsClick?: () => void;
   onInfoClick?: () => void;
+  messages?: Message[];
   className?: string;
 }
 
@@ -27,6 +30,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   onModelChange,
   onSettingsClick,
   onInfoClick,
+  messages = [],
   className,
 }) => {
   return (
@@ -48,6 +52,10 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             onModelChange={onModelChange}
           />
         </div>
+
+        {messages.length > 0 && (
+          <ExportMenu messages={messages} />
+        )}
 
         {onInfoClick && (
           <Button

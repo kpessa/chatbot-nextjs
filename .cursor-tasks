@@ -111,8 +111,11 @@
 
 ## Planned
 - [ ] Advanced Features
-  - [ ] Message search and filtering
-  - [ ] Chat export functionality
+  - [x] Chat export functionality (2025-03-12)
+    - [x] Export as text
+    - [x] Export as JSON
+    - [x] Export as HTML
+    - [x] Export as Markdown
   - [ ] Code syntax highlighting
   - [ ] Markdown support
   - [ ] Voice input/output

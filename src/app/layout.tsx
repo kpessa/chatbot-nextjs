@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/lib/query-provider";
 import { ChatProvider } from "@/lib/chat-context";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -55,6 +56,7 @@ export default function RootLayout({
           <QueryProvider>
             <ChatProvider>
               {children}
+              <Toaster />
             </ChatProvider>
           </QueryProvider>
         </ThemeProvider>

@@ -3,6 +3,7 @@
  */
 
 import { Message, ChatModel, Attachment } from './types';
+import { getUserFriendlyErrorMessage } from './api/error-handling';
 
 interface SendMessageParams {
   message: string;
@@ -51,11 +52,12 @@ export async function sendMessage({
     
     // Add attachments if any
     if (attachments && attachments.length > 0) {
-      // In a real implementation, we would add the files to the form data
-      // This is a placeholder for the actual implementation
-      // attachments.forEach((attachment) => {
-      //   formData.append('files', attachment.file);
-      // });
+      attachments.forEach((attachment) => {
+        // If the attachment has a file property, add it to the form data
+        if (attachment.file) {
+          formData.append('files', attachment.file);
+        }
+      });
     }
 
     // Add the request data
@@ -94,9 +96,11 @@ export async function sendMessage({
       role: 'assistant',
       timestamp: Date.now(),
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending message:', error);
-    throw error;
+    // Convert to user-friendly error message
+    const friendlyMessage = getUserFriendlyErrorMessage(error);
+    throw new Error(friendlyMessage);
   }
 }
 
@@ -127,9 +131,12 @@ export async function uploadFile(file: File): Promise<Attachment> {
       url: data.url,
       size: data.size,
       previewUrl: data.previewUrl,
+      file: file,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading file:', error);
-    throw error;
+    // Convert to user-friendly error message
+    const friendlyMessage = getUserFriendlyErrorMessage(error);
+    throw new Error(friendlyMessage);
   }
 } 

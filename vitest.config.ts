@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 
 import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
 
@@ -10,26 +11,29 @@ const dirname =
 
 // More info at: https://storybook.js.org/docs/writing-tests/test-addon
 export default defineConfig({
+  plugins: [react()],
   test: {
-    workspace: [
-      {
-        extends: true,
-        plugins: [
-          // The plugin will run tests for the stories defined in your Storybook config
-          // See options at: https://storybook.js.org/docs/writing-tests/test-addon#storybooktest
-          storybookTest({ configDir: path.join(dirname, '.storybook') }),
-        ],
-        test: {
-          name: 'storybook',
-          browser: {
-        enabled: true,
-        headless: true,
-        name: 'chromium',
-        provider: 'playwright'
-      },
-          setupFiles: ['.storybook/vitest.setup.ts'],
-        },
-      },
-    ],
+    environment: 'jsdom',
+    setupFiles: ['./src/lib/__tests__/setup.ts'],
+    globals: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/**',
+        'dist/**',
+        '**/*.d.ts',
+        '**/*.test.{ts,tsx}',
+        '**/types.ts',
+        'coverage/**',
+      ],
+    },
+    include: ['src/lib/__tests__/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['**/*.stories.{ts,tsx}'],
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
   },
 });

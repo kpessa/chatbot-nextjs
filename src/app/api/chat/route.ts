@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import { getModelService } from '@/lib/api/model-services';
+import { getModelById } from '@/lib/api/model-registry';
 
 /**
  * API route for chat
- * This is a placeholder implementation that echoes back the message
- * In a real implementation, this would call the appropriate AI model API
+ * Handles routing requests to the appropriate AI model API
  */
 export async function POST(request: NextRequest) {
   try {
@@ -46,32 +47,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the last user message
-    const lastUserMessage = messages[messages.length - 1];
+    // Use mock response for development if environment variable is set
+    if (process.env.USE_MOCK_RESPONSES === 'true') {
+      // Get the last user message
+      const lastUserMessage = messages[messages.length - 1];
 
-    // In a real implementation, this would call the appropriate AI model API
-    // For now, we'll just echo back the message with a mock response
-    const mockResponses: Record<string, string> = {
-      openai: `This is a mock response from OpenAI's ${model} model. You said: "${lastUserMessage.content}"`,
-      anthropic: `This is a mock response from Anthropic's ${model} model. You said: "${lastUserMessage.content}"`,
-      deepseek: `This is a mock response from DeepSeek's ${model} model. You said: "${lastUserMessage.content}"`,
-      custom: `This is a mock response from a custom model. You said: "${lastUserMessage.content}"`,
-    };
+      // Mock responses for development
+      const mockResponses: Record<string, string> = {
+        openai: `This is a mock response from OpenAI's ${model} model. You said: "${lastUserMessage.content}"`,
+        anthropic: `This is a mock response from Anthropic's ${model} model. You said: "${lastUserMessage.content}"`,
+        deepseek: `This is a mock response from DeepSeek's ${model} model. You said: "${lastUserMessage.content}"`,
+        custom: `This is a mock response from a custom model. You said: "${lastUserMessage.content}"`,
+      };
 
-    // Add a delay to simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Add a delay to simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Return the mock response
-    return NextResponse.json({
-      id: uuidv4(),
-      content: mockResponses[provider] || `You said: "${lastUserMessage.content}"`,
-      role: 'assistant',
-      timestamp: Date.now(),
-    });
-  } catch (error) {
+      // Return the mock response
+      return NextResponse.json({
+        id: uuidv4(),
+        content: mockResponses[provider] || `You said: "${lastUserMessage.content}"`,
+        role: 'assistant',
+        timestamp: Date.now(),
+      });
+    }
+
+    try {
+      // Get the appropriate model service
+      const modelService = getModelService(provider);
+
+      // Call the model service
+      const response = await modelService({
+        messages,
+        temperature,
+        maxTokens: max_tokens,
+        apiKey: apiKey || '',
+        modelId: model,
+      });
+
+      // Return the response
+      return NextResponse.json({
+        id: response.id || uuidv4(),
+        content: response.content,
+        role: 'assistant',
+        timestamp: Date.now(),
+      });
+    } catch (error: any) {
+      console.error(`Error calling ${provider} API:`, error);
+      return NextResponse.json(
+        { 
+          message: `Error from ${provider} API: ${error.message}`,
+          error: true
+        },
+        { status: 500 }
+      );
+    }
+  } catch (error: any) {
     console.error('Error in chat API:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: `Internal server error: ${error.message}` },
       { status: 500 }
     );
   }
