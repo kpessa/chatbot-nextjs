@@ -159,6 +159,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           debugLog('Info clicked');
           onInfoClick?.();
         }}
+        onClearConversation={() => {
+          debugLog('Clear conversation clicked');
+          onClearConversation?.();
+        }}
+        onRetry={() => {
+          debugLog('Retry clicked');
+          onRetry?.();
+        }}
         messages={displayMessages}
       />
       

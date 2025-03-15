@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, MockedFunction } from 'vitest';
 import { sendMessage, uploadFile } from '../api-service';
 import { ChatModel, Message, Attachment } from '../types';
 
@@ -95,11 +95,11 @@ describe('API Service', () => {
         timestamp: expect.any(Number),
       });
 
-      const fetchCall = fetch as any;
-      const [url, options] = fetchCall.mock.calls[0];
+      const fetchCall = fetch as MockedFunction<typeof fetch>;
+      const [url, options] = fetchCall.mock.calls[0] ?? [];
       expect(url).toBe('/api/chat');
-      expect(options.method).toBe('POST');
-      expect(options.body instanceof FormData).toBe(true);
+      expect(options?.method).toBe('POST');
+      expect(options?.body instanceof FormData).toBe(true);
     });
 
     it('should handle API errors gracefully', async () => {

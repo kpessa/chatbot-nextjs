@@ -1,31 +1,31 @@
+"use client";
+
 import type { Meta, StoryObj } from "@storybook/react";
 import { ChatInterface } from "./ChatInterface";
 import { QueryProvider } from "@/lib/query-provider";
 import { ChatProvider } from "@/lib/chat-context";
 import { ThemeProvider } from "@/components/theme-provider";
-import type { Message, ChatModel, Attachment } from "@/lib/types";
-import { useState, useCallback } from "react";
+import type { Message, Attachment } from "@/lib/types";
+import { type ReactNode, type ComponentType, useState, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 // Create a wrapper component that provides all necessary context
-const StorybookProvider = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <QueryProvider>
-        <ChatProvider>
-          {children}
-        </ChatProvider>
-      </QueryProvider>
-    </ThemeProvider>
-  );
-};
+const StorybookProvider = ({ children }: { children: ReactNode }) => (
+  <ThemeProvider
+    attribute="class"
+    defaultTheme="system"
+    enableSystem
+    disableTransitionOnChange
+  >
+    <QueryProvider>
+      <ChatProvider>
+        {children}
+      </ChatProvider>
+    </QueryProvider>
+  </ThemeProvider>
+);
 
-const meta: Meta<typeof ChatInterface> = {
+const meta = {
   title: "Templates/ChatInterface",
   component: ChatInterface,
   parameters: {
@@ -33,7 +33,7 @@ const meta: Meta<typeof ChatInterface> = {
   },
   tags: ["autodocs"],
   decorators: [
-    (Story) => (
+    (Story: ComponentType) => (
       <StorybookProvider>
         <Story />
       </StorybookProvider>
@@ -56,25 +56,6 @@ const mockMessages: Message[] = [
     role: "assistant",
     content: "Of course! I'd be happy to help. What do you need assistance with?",
     timestamp: Date.now(),
-  },
-];
-
-const mockModels: ChatModel[] = [
-  {
-    id: "gpt-4",
-    name: "GPT-4",
-    provider: "openai",
-    maxTokens: 8192,
-    temperature: 0.7,
-    apiKeyRequired: true,
-  },
-  {
-    id: "gpt-3.5-turbo",
-    name: "GPT-3.5 Turbo",
-    provider: "openai",
-    maxTokens: 4096,
-    temperature: 0.7,
-    apiKeyRequired: true,
   },
 ];
 
@@ -102,9 +83,9 @@ export const Default: Story = {
       },
     ],
     selectedModel: "gpt-4",
-    onModelChange: (modelId) => console.log("Model changed:", modelId),
+    onModelChange: (modelId: string) => console.log("Model changed:", modelId),
     messages: mockMessages,
-    onSendMessage: (content) => console.log("Message sent:", content),
+    onSendMessage: (content: string) => console.log("Message sent:", content),
     onSettingsClick: () => console.log("Settings clicked"),
     onInfoClick: () => console.log("Info clicked"),
     onClearConversation: () => console.log("Clear conversation clicked"),
@@ -138,7 +119,7 @@ export const WithFiles: Story = {
 // Interactive story that demonstrates sending messages
 const InteractiveChatTemplate = () => {
   const [messages, setMessages] = useState<Message[]>(mockMessages);
-  const [selectedModel, setSelectedModel] = useState("gpt-4");
+  const [selectedModel, setSelectedModel] = useState<string>("gpt-4");
 
   const handleSendMessage = useCallback((content: string, attachments?: Attachment[]) => {
     const newMessage: Message = {
@@ -148,7 +129,7 @@ const InteractiveChatTemplate = () => {
       timestamp: Date.now(),
       attachments,
     };
-    setMessages((prev) => [...prev, newMessage]);
+    setMessages((prevMessages: Message[]) => [...prevMessages, newMessage]);
   }, []);
 
   return (
@@ -191,6 +172,7 @@ const InteractiveChatTemplate = () => {
 
 export const Interactive: Story = {
   render: () => <InteractiveChatTemplate />,
+  args: Default.args,
   parameters: {
     docs: {
       description: {

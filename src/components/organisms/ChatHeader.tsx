@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Settings, Info } from "lucide-react";
+import { Settings, Info, Trash2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/atoms/Button";
 import { ModelSelector } from "@/components/molecules/ModelSelector";
@@ -15,6 +15,8 @@ export interface ChatHeaderProps {
   onModelChange: (modelId: string) => void;
   onSettingsClick?: () => void;
   onInfoClick?: () => void;
+  onClearConversation?: () => void;
+  onRetry?: () => void;
   messages?: Message[];
   className?: string;
 }
@@ -30,6 +32,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   onModelChange,
   onSettingsClick,
   onInfoClick,
+  onClearConversation,
+  onRetry,
   messages = [],
   className,
 }) => {
@@ -54,7 +58,31 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         </div>
 
         {messages.length > 0 && (
-          <ExportMenu messages={messages} />
+          <>
+            <ExportMenu messages={messages} />
+            
+            {onRetry && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onRetry}
+                aria-label="Retry last message"
+              >
+                <RotateCcw className="w-5 h-5" />
+              </Button>
+            )}
+
+            {onClearConversation && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClearConversation}
+                aria-label="Clear conversation"
+              >
+                <Trash2 className="w-5 h-5" />
+              </Button>
+            )}
+          </>
         )}
 
         {onInfoClick && (

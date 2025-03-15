@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { ChatProvider, useChat } from '../chat-context';
 import { ChatModel, Message } from '../types';
+import type { ReactNode } from 'react';
 
 // Test component that uses the chat context
 function TestComponent({ onMount }: { onMount: (context: ReturnType<typeof useChat>) => void }) {
@@ -10,18 +11,23 @@ function TestComponent({ onMount }: { onMount: (context: ReturnType<typeof useCh
   return null;
 }
 
+// Wrapper component to provide children prop
+function Wrapper({ children }: { children: ReactNode }) {
+  return <ChatProvider>{children}</ChatProvider>;
+}
+
 describe('ChatContext', () => {
   it('should provide initial state', () => {
     let contextValue: ReturnType<typeof useChat> | undefined;
 
     render(
-      <ChatProvider>
+      <Wrapper>
         <TestComponent
           onMount={(context) => {
             contextValue = context;
           }}
         />
-      </ChatProvider>
+      </Wrapper>
     );
 
     expect(contextValue?.state.messages).toEqual([]);
@@ -35,13 +41,13 @@ describe('ChatContext', () => {
     let contextValue: ReturnType<typeof useChat> | undefined;
 
     render(
-      <ChatProvider>
+      <Wrapper>
         <TestComponent
           onMount={(context) => {
             contextValue = context;
           }}
         />
-      </ChatProvider>
+      </Wrapper>
     );
 
     const message: Omit<Message, 'id' | 'timestamp'> = {
@@ -64,13 +70,13 @@ describe('ChatContext', () => {
     let contextValue: ReturnType<typeof useChat> | undefined;
 
     render(
-      <ChatProvider>
+      <Wrapper>
         <TestComponent
           onMount={(context) => {
             contextValue = context;
           }}
         />
-      </ChatProvider>
+      </Wrapper>
     );
 
     // Add a message first
@@ -99,13 +105,13 @@ describe('ChatContext', () => {
     let contextValue: ReturnType<typeof useChat> | undefined;
 
     render(
-      <ChatProvider>
+      <Wrapper>
         <TestComponent
           onMount={(context) => {
             contextValue = context;
           }}
         />
-      </ChatProvider>
+      </Wrapper>
     );
 
     // Add some messages
@@ -128,13 +134,13 @@ describe('ChatContext', () => {
     let contextValue: ReturnType<typeof useChat> | undefined;
 
     render(
-      <ChatProvider>
+      <Wrapper>
         <TestComponent
           onMount={(context) => {
             contextValue = context;
           }}
         />
-      </ChatProvider>
+      </Wrapper>
     );
 
     const newSettings = {
@@ -156,13 +162,13 @@ describe('ChatContext', () => {
     let contextValue: ReturnType<typeof useChat> | undefined;
 
     render(
-      <ChatProvider>
+      <Wrapper>
         <TestComponent
           onMount={(context) => {
             contextValue = context;
           }}
         />
-      </ChatProvider>
+      </Wrapper>
     );
 
     const newModel: ChatModel = {
@@ -185,13 +191,13 @@ describe('ChatContext', () => {
     let contextValue: ReturnType<typeof useChat> | undefined;
 
     render(
-      <ChatProvider>
+      <Wrapper>
         <TestComponent
           onMount={(context) => {
             contextValue = context;
           }}
         />
-      </ChatProvider>
+      </Wrapper>
     );
 
     act(() => {
@@ -211,13 +217,13 @@ describe('ChatContext', () => {
     let contextValue: ReturnType<typeof useChat> | undefined;
 
     render(
-      <ChatProvider>
+      <Wrapper>
         <TestComponent
           onMount={(context) => {
             contextValue = context;
           }}
         />
-      </ChatProvider>
+      </Wrapper>
     );
 
     act(() => {

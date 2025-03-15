@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, MockedFunction } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ChatProvider, useChat } from '../../chat-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import * as apiService from '../../api-service';
+import '@testing-library/jest-dom';
 
 // Mock components
 const mockComponents = {
@@ -25,10 +26,7 @@ vi.mock('@/components/model-selector', () => ({
 }));
 
 // Mock API service
-vi.mock('../../api-service', () => ({
-  sendMessage: vi.fn(),
-  uploadFile: vi.fn(),
-}));
+vi.mock('../../api-service');
 
 // Test component that uses chat functionality
 function TestChatInterface() {
@@ -114,7 +112,7 @@ describe('Chat Integration', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    vi.clearAllMocks();
     queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -146,11 +144,11 @@ describe('Chat Integration', () => {
     const mockResponse = {
       id: 'response-1',
       content: 'Test response',
-      role: 'assistant',
+      role: 'assistant' as const,
       timestamp: Date.now(),
     };
 
-    (apiService.sendMessage as any).mockResolvedValueOnce(mockResponse);
+    (apiService.sendMessage as MockedFunction<typeof apiService.sendMessage>).mockResolvedValueOnce(mockResponse);
 
     renderWithProviders(<TestChatInterface />);
 
@@ -180,7 +178,7 @@ describe('Chat Integration', () => {
       size: 12,
     };
 
-    (apiService.uploadFile as any).mockResolvedValueOnce(mockResponse);
+    (apiService.uploadFile as MockedFunction<typeof apiService.uploadFile>).mockResolvedValueOnce(mockResponse);
 
     renderWithProviders(<TestChatInterface />);
 
@@ -192,7 +190,7 @@ describe('Chat Integration', () => {
   });
 
   it('should handle API errors', async () => {
-    (apiService.sendMessage as any).mockRejectedValueOnce(new Error('API Error'));
+    (apiService.sendMessage as MockedFunction<typeof apiService.sendMessage>).mockRejectedValueOnce(new Error('API Error'));
 
     renderWithProviders(<TestChatInterface />);
 
@@ -204,7 +202,7 @@ describe('Chat Integration', () => {
   });
 
   it('should handle network errors', async () => {
-    (apiService.sendMessage as any).mockRejectedValueOnce(new Error('Network error'));
+    (apiService.sendMessage as MockedFunction<typeof apiService.sendMessage>).mockRejectedValueOnce(new Error('Network error'));
 
     renderWithProviders(<TestChatInterface />);
 
