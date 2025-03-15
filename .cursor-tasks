@@ -106,7 +106,12 @@
       - [x] Settings persistence
       - [x] Theme handling
       - [x] Model selection
-  - [ ] End-to-end testing with Cypress
+  - [x] End-to-end testing with Cypress (2025-03-15)
+    - [x] Set up Cypress configuration (2025-03-15)
+    - [x] Create test for home page (2025-03-15)
+    - [x] Create test for chat page (2025-03-15)
+    - [x] Create test for settings page (2025-03-15)
+    - [x] Create test for export functionality (2025-03-15)
   - [ ] Performance testing and optimization
 
 ## Planned

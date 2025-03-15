@@ -1,0 +1,32 @@
+{
+  "name": "Using fixtures to represent data",
+  "email": "test@example.com",
+  "password": "password123",
+  "body": "Fixtures are a great way to mock data for responses to routes",
+  "models": [
+    {
+      "id": "gpt-4",
+      "name": "GPT-4",
+      "provider": "openai"
+    },
+    {
+      "id": "claude-3-opus",
+      "name": "Claude 3 Opus",
+      "provider": "anthropic"
+    }
+  ],
+  "messages": [
+    {
+      "id": "1",
+      "role": "user",
+      "content": "Hello, how can you help me today?",
+      "timestamp": 1678900000000
+    },
+    {
+      "id": "2",
+      "role": "assistant",
+      "content": "I can help you with a variety of tasks. What would you like to know?",
+      "timestamp": 1678900060000
+    }
+  ]
+} 
