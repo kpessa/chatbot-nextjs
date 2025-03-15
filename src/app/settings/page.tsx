@@ -7,10 +7,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useSettings } from "@/lib/stores/settings";
 import { toast } from "sonner";
+import { useState } from "react";
 
 const API_PROVIDERS = {
   openai: "OpenAI",
@@ -21,6 +28,7 @@ const API_PROVIDERS = {
 export default function SettingsPage() {
   const router = useRouter();
   const settings = useSettings();
+  const [testingProvider, setTestingProvider] = useState<string | null>(null);
 
   const handleApiKeyChange = (provider: keyof typeof API_PROVIDERS, value: string) => {
     if (value === "") {
@@ -30,9 +38,58 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSave = () => {
-    toast.success("Settings saved successfully");
+  const handleBack = () => {
     router.back();
+  };
+
+  const handleTemperatureChange = (value: number[]) => {
+    settings.updateSettings({ temperature: value[0] });
+  };
+
+  const handleMaxTokensChange = (value: number[]) => {
+    settings.updateSettings({ maxTokens: value[0] });
+  };
+
+  const handleThemeChange = (value: "system" | "light" | "dark") => {
+    settings.updateSettings({ theme: value });
+  };
+
+  const testApiConnection = async (provider: string) => {
+    setTestingProvider(provider);
+    
+    try {
+      const apiKey = settings.apiKeys[provider as keyof typeof settings.apiKeys];
+      
+      if (!apiKey) {
+        toast.error(`No API key provided for ${provider}`);
+        setTestingProvider(null);
+        return;
+      }
+      
+      // Create a simple test request based on the provider
+      const response = await fetch('/api/test-connection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider,
+          apiKey,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast.success(`Successfully connected to ${provider} API`);
+      } else {
+        toast.error(`Failed to connect to ${provider} API: ${data.message}`);
+      }
+    } catch (error) {
+      toast.error(`Error testing connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setTestingProvider(null);
+    }
   };
 
   return (
@@ -41,7 +98,7 @@ export default function SettingsPage() {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => router.back()} 
+          onClick={handleBack} 
           className="mr-2"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -60,14 +117,31 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             {Object.entries(API_PROVIDERS).map(([provider, label]) => (
               <div key={provider} className="space-y-2">
-                <Label htmlFor={`${provider}ApiKey`}>{label} API Key</Label>
-                <Input
-                  id={`${provider}ApiKey`}
-                  type="password"
-                  value={settings.apiKeys[provider as keyof typeof API_PROVIDERS] || ""}
-                  onChange={(e) => handleApiKeyChange(provider as keyof typeof API_PROVIDERS, e.target.value)}
-                  placeholder={`Enter your ${label} API key`}
-                />
+                <Label htmlFor={`${provider}-api-key`}>{label} API Key</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id={`${provider}-api-key`}
+                    type="password"
+                    value={settings.apiKeys[provider as keyof typeof settings.apiKeys] || ""}
+                    onChange={(e) => handleApiKeyChange(provider as keyof typeof API_PROVIDERS, e.target.value)}
+                    placeholder={`Enter your ${label} API key`}
+                    className="flex-1"
+                  />
+                  <Button 
+                    variant="outline" 
+                    onClick={() => testApiConnection(provider)}
+                    disabled={testingProvider === provider}
+                  >
+                    {testingProvider === provider ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Testing...
+                      </>
+                    ) : (
+                      'Test'
+                    )}
+                  </Button>
+                </div>
               </div>
             ))}
           </CardContent>
@@ -85,7 +159,7 @@ export default function SettingsPage() {
               <Label htmlFor="theme">Theme</Label>
               <Select
                 value={settings.theme}
-                onValueChange={(value: 'light' | 'dark' | 'system') => settings.updateSettings({ theme: value })}
+                onValueChange={handleThemeChange}
               >
                 <SelectTrigger id="theme">
                   <SelectValue placeholder="Select theme" />
@@ -106,7 +180,7 @@ export default function SettingsPage() {
                 max={2}
                 step={0.1}
                 value={[settings.temperature]}
-                onValueChange={(value) => settings.updateSettings({ temperature: value[0] })}
+                onValueChange={handleTemperatureChange}
               />
               <p className="text-sm text-muted-foreground">
                 Lower values make responses more deterministic, higher values make them more creative
@@ -121,7 +195,7 @@ export default function SettingsPage() {
                 max={8000}
                 step={100}
                 value={[settings.maxTokens]}
-                onValueChange={(value) => settings.updateSettings({ maxTokens: value[0] })}
+                onValueChange={handleMaxTokensChange}
               />
             </div>
 

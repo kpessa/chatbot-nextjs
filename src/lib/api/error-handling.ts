@@ -1,138 +1,109 @@
 /**
- * Error handling and retry utilities for API calls
+ * Error handling utilities for API requests
  */
 
-// Custom error class for API errors
-export class ApiError extends Error {
-  status: number;
-  provider: string;
-
-  constructor(message: string, status: number, provider: string) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.provider = provider;
-  }
-}
-
-interface RetryOptions {
-  maxRetries: number;
-  initialDelay: number;
-  maxDelay: number;
-  backoffFactor: number;
-  retryableStatusCodes: number[];
-}
-
-const defaultRetryOptions: RetryOptions = {
-  maxRetries: 3,
-  initialDelay: 1000, // 1 second
-  maxDelay: 10000, // 10 seconds
-  backoffFactor: 2,
-  retryableStatusCodes: [408, 429, 500, 502, 503, 504], // Common retryable status codes
-};
+import { debugLog } from '../debug';
 
 /**
- * Executes a function with retry logic
- * @param fn The function to execute
- * @param options Retry options
- * @returns The result of the function
+ * Retry a function with exponential backoff
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  options: Partial<RetryOptions> = {}
+  maxRetries = 3,
+  initialDelay = 1000
 ): Promise<T> {
-  const retryOptions = { ...defaultRetryOptions, ...options };
+  let retries = 0;
   let lastError: Error | null = null;
-  let delay = retryOptions.initialDelay;
 
-  for (let attempt = 0; attempt <= retryOptions.maxRetries; attempt++) {
+  while (retries < maxRetries) {
     try {
       return await fn();
-    } catch (error: any) {
-      lastError = error;
-
-      // Check if we should retry based on the error
-      const shouldRetry =
-        attempt < retryOptions.maxRetries &&
-        (error instanceof ApiError
-          ? retryOptions.retryableStatusCodes.includes(error.status)
-          : error.name === 'AbortError' || error.name === 'TimeoutError');
-
-      if (!shouldRetry) {
-        break;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      // Don't retry if it's a client error (4xx)
+      if (isClientError(lastError)) {
+        debugLog('Client error, not retrying', lastError);
+        throw lastError;
       }
-
-      // Wait before retrying
-      await new Promise((resolve) => setTimeout(resolve, delay));
-
-      // Increase delay for next retry with exponential backoff
-      delay = Math.min(delay * retryOptions.backoffFactor, retryOptions.maxDelay);
+      
+      retries++;
+      
+      if (retries >= maxRetries) {
+        debugLog(`Max retries (${maxRetries}) reached`, lastError);
+        throw lastError;
+      }
+      
+      const delay = initialDelay * Math.pow(2, retries - 1);
+      debugLog(`Retry ${retries}/${maxRetries} after ${delay}ms`, lastError);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 
-  throw lastError || new Error('Retry failed');
+  // This should never happen, but TypeScript needs it
+  throw lastError || new Error('Unknown error during retry');
 }
 
 /**
- * Parses API error responses
- * @param response Fetch response
- * @param provider API provider name
- * @returns ApiError with appropriate message and status
+ * Check if an error is a client error (4xx)
  */
-export async function parseApiError(
-  response: Response,
-  provider: string
-): Promise<ApiError> {
-  let errorMessage = `${provider} API error: ${response.status} ${response.statusText}`;
+function isClientError(error: Error): boolean {
+  return error.message.includes('status code 4');
+}
 
+/**
+ * Parse an API error response
+ */
+export async function parseApiError(response: Response, provider: string): Promise<Error> {
   try {
-    const errorData = await response.json();
-    if (errorData.error?.message) {
-      errorMessage = errorData.error.message;
-    } else if (errorData.message) {
-      errorMessage = errorData.message;
+    const data = await response.json();
+    debugLog(`${provider} API error response`, data);
+    
+    // Extract error message based on provider
+    let errorMessage = `${provider} API error: ${response.status} ${response.statusText}`;
+    
+    if (provider === 'OpenAI') {
+      errorMessage = data.error?.message || errorMessage;
+    } else if (provider === 'Anthropic') {
+      errorMessage = data.error?.message || errorMessage;
+    } else if (provider === 'Deepseek') {
+      errorMessage = data.error?.message || errorMessage;
     }
-  } catch (e) {
+    
+    return new Error(errorMessage);
+  } catch {
     // If we can't parse the JSON, just use the status text
+    return new Error(`${provider} API error: ${response.status} ${response.statusText}`);
   }
-
-  return new ApiError(errorMessage, response.status, provider);
 }
 
 /**
- * Handles common API errors and provides user-friendly messages
- * @param error The error to handle
- * @returns User-friendly error message
+ * Get a user-friendly error message
  */
-export function getUserFriendlyErrorMessage(error: any): string {
-  if (error instanceof ApiError) {
-    // Handle specific status codes
-    switch (error.status) {
-      case 401:
-        return `Authentication failed for ${error.provider}. Please check your API key.`;
-      case 403:
-        return `Access denied for ${error.provider}. Your API key may not have permission to use this model.`;
-      case 429:
-        return `Rate limit exceeded for ${error.provider}. Please try again later.`;
-      case 500:
-      case 502:
-      case 503:
-      case 504:
-        return `${error.provider} service is currently unavailable. Please try again later.`;
-      default:
-        return error.message;
+export function getUserFriendlyErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    // API key errors
+    if (error.message.includes('API key')) {
+      return 'Invalid API key. Please check your API key in the settings.';
     }
+    
+    // Rate limit errors
+    if (error.message.includes('rate limit') || error.message.includes('429')) {
+      return 'Rate limit exceeded. Please try again later.';
+    }
+    
+    // Model errors
+    if (error.message.includes('model')) {
+      return 'There was an issue with the selected model. Please try a different model.';
+    }
+    
+    // Network errors
+    if (error.message.includes('network') || error.message.includes('fetch')) {
+      return 'Network error. Please check your internet connection.';
+    }
+    
+    return error.message;
   }
-
-  // Network errors
-  if (error.name === 'AbortError') {
-    return 'Request timed out. Please check your internet connection and try again.';
-  }
-
-  if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-    return 'Network error. Please check your internet connection and try again.';
-  }
-
-  // Default error message
-  return error.message || 'An unexpected error occurred. Please try again.';
+  
+  return 'An unknown error occurred. Please try again.';
 } 

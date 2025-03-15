@@ -25,7 +25,8 @@ type Story = StoryObj<typeof FilePreview>;
 
 // Helper function to create a file
 const createFile = (name: string, type: string, size: number = 1024 * 50) => {
-  return new File(["test"], name, { type });
+  const content = new Array(size).fill('a').join('');
+  return new File([content], name, { type });
 };
 
 export const ImagePreview: Story = {

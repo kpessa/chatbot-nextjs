@@ -2,6 +2,23 @@
 
 These rules guide the development of our LLM Chat Interface using Next.js with ShadCN components, ensuring clean, maintainable, and consistent code with proper version control.
 
+If you are unsure about a change, do not make that change and ask for guidance from the user.
+
+## File Modification Guidelines
+
+- Do not create new files with .new extensions when you can't update the original file
+- Instead, try different approaches to fix the original file or ask for guidance
+- When updating components, ensure all related components are updated to maintain compatibility
+- Fix type mismatches between components by updating interfaces rather than creating workarounds
+
+## Tool and CLI Usage
+
+- Use standard CLI tools (like shadcn CLI) for adding components when available
+- If a standard CLI tool fails or doesn't work as expected, ask the user for guidance
+- Do not attempt to manually implement solutions when standard tools exist but fail
+- Document any CLI commands used in comments for future reference
+- Follow the project's established patterns for tool usage
+
 ## Next.js Project Structure
 
 - Use the App Router for modern Next.js features

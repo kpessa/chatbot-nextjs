@@ -9,10 +9,15 @@ describe('API Service', () => {
 
   describe('sendMessage', () => {
     const mockModel: ChatModel = {
-      id: 'gpt-4',
-      name: 'GPT-4',
-      provider: 'openai',
-      maxTokens: 8192,
+      id: "test-model",
+      name: "Test Model",
+      provider: "openai",
+      maxTokens: 2048,
+      temperature: 0.7,
+      apiKeyRequired: true,
+      description: "Test model for unit tests",
+      supportsFiles: false,
+      fileTypes: []
     };
 
     const mockMessage = 'Hello, how are you?';

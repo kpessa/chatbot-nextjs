@@ -36,7 +36,7 @@ export const Page: React.FC = () => {
         <ul>
           <li>
             Use a higher-level connected component. Storybook helps you compose such data from the
-            "args" of child component stories
+            &ldquo;args&rdquo; of child component stories
           </li>
           <li>
             Assemble data in the page component from your services. You can mock these services out
@@ -67,6 +67,12 @@ export const Page: React.FC = () => {
           </svg>
           Viewports addon in the toolbar
         </div>
+        <p>
+          To get started, edit <code>src/stories/Page.tsx</code> and save to reload.
+        </p>
+        <p>
+          Don&apos;t forget to install the viewports addon in the toolbar
+        </p>
       </section>
     </article>
   );

@@ -4,7 +4,7 @@
 
 import { Message, ChatModel, Attachment } from './types';
 import { getUserFriendlyErrorMessage } from './api/error-handling';
-import { debugLog, logApiRequest, logApiResponse } from './debug';
+import { debugLog, debugFetch } from './debug';
 
 // Extended Attachment type for internal use
 interface ExtendedAttachment extends Attachment {
@@ -92,11 +92,8 @@ export async function sendMessage({
       debugLog('No API key provided for provider:', model.provider);
     }
 
-    // Log the API request
-    logApiRequest('/api/chat', 'POST', requestData);
-
-    // Send the request to the API
-    const response = await fetch('/api/chat', {
+    // Send the request to the API using debugFetch
+    const response = await debugFetch('/api/chat', {
       method: 'POST',
       body: formData,
     });
@@ -104,13 +101,11 @@ export async function sendMessage({
     if (!response.ok) {
       const errorData = await response.json();
       debugLog('API error response:', errorData);
-      logApiResponse('/api/chat', response.status, errorData, new Error(errorData.message));
       throw new Error(errorData.message || 'Failed to send message');
     }
 
     const data = await response.json();
     debugLog('API success response:', data);
-    logApiResponse('/api/chat', response.status, data);
 
     return {
       id: data.id,
@@ -137,10 +132,8 @@ export async function uploadFile(file: File): Promise<ExtendedAttachment> {
     const formData = new FormData();
     formData.append('file', file);
 
-    // Log the API request
-    logApiRequest('/api/upload', 'POST', { fileName: file.name, fileSize: file.size });
-
-    const response = await fetch('/api/upload', {
+    // Send the request to the API using debugFetch
+    const response = await debugFetch('/api/upload', {
       method: 'POST',
       body: formData,
     });
@@ -148,13 +141,11 @@ export async function uploadFile(file: File): Promise<ExtendedAttachment> {
     if (!response.ok) {
       const errorData = await response.json();
       debugLog('Upload API error response:', errorData);
-      logApiResponse('/api/upload', response.status, errorData, new Error(errorData.message));
       throw new Error(errorData.message || 'Failed to upload file');
     }
 
     const data = await response.json();
     debugLog('Upload API success response:', data);
-    logApiResponse('/api/upload', response.status, data);
 
     return {
       id: data.id,

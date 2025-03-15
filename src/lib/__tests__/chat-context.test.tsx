@@ -28,7 +28,7 @@ describe('ChatContext', () => {
     expect(contextValue?.state.isProcessing).toBe(false);
     expect(contextValue?.state.error).toBe(null);
     expect(contextValue?.state.settings).toBeDefined();
-    expect(contextValue?.availableModels).toBeDefined();
+    expect(contextValue?.state.availableModels).toBeDefined();
   });
 
   it('should add a message', () => {

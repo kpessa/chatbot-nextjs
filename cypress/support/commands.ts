@@ -1,18 +1,21 @@
-// ***********************************************
-// This example commands.ts shows you how to
-// create various custom commands and overwrite
-// existing commands.
-//
-// For more comprehensive examples of custom
-// commands please read more here:
-// https://on.cypress.io/custom-commands
-// ***********************************************
-
-// Import Testing Library commands
+/// <reference types="cypress" />
 import '@testing-library/cypress/add-commands';
+import { mount } from '@cypress/react';
+
+declare global {
+  namespace Cypress {
+    interface Chainable<Subject = any> {
+      mount: typeof mount;
+      enableDebugMode(): Chainable<void>;
+      disableDebugMode(): Chainable<void>;
+      verifyDebugMode(enabled: boolean): Chainable<void>;
+      login(email: string, password: string): void;
+    }
+  }
+}
 
 // -- This is a parent command --
-Cypress.Commands.add('login', (email, password) => {
+Cypress.Commands.add('login', (email: string, password: string) => {
   cy.session([email, password], () => {
     cy.visit('/');
     cy.get('input[name=email]').type(email);
@@ -22,23 +25,36 @@ Cypress.Commands.add('login', (email, password) => {
   });
 });
 
-// -- This is a child command --
-// Cypress.Commands.add('drag', { prevSubject: 'element'}, (subject, options) => { ... })
+// Enable debug mode
+Cypress.Commands.add('enableDebugMode', () => {
+  // Find and click the debug button
+  cy.contains('button', 'Debug (Off)').click();
+  cy.verifyDebugMode(true);
+});
 
-// -- This is a dual command --
-// Cypress.Commands.add('dismiss', { prevSubject: 'optional'}, (subject, options) => { ... })
+// Disable debug mode
+Cypress.Commands.add('disableDebugMode', () => {
+  // Find and click the debug button when it's enabled
+  cy.contains('button', 'Debug (On)').click();
+  cy.verifyDebugMode(false);
+});
 
-// -- This will overwrite an existing command --
-// Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
-
-// eslint-disable-next-line @typescript-eslint/no-namespace
-declare global {
-  namespace Cypress {
-    interface Chainable {
-      login(email: string, password: string): Chainable<void>;
-      // drag(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-      // dismiss(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-      // visit(originalFn: CommandOriginalFn, url: string, options: Partial<VisitOptions>): Chainable<Element>
-    }
-  }
-} 
+// Verify debug mode state
+Cypress.Commands.add('verifyDebugMode', (enabled: boolean) => {
+  const state = enabled ? 'On' : 'Off';
+  const className = enabled ? 'text-primary' : 'text-muted-foreground';
+  
+  // Find the debug button and verify its state
+  cy.contains('button', `Debug (${state})`)
+    .should('exist')
+    .and('have.class', className);
+  
+  // Verify toast notification
+  cy.contains(enabled ? 'Debug mode enabled' : 'Debug mode disabled')
+    .should('be.visible');
+  
+  // Verify console log message
+  cy.get('@consoleLog').should('be.calledWith', 
+    enabled ? '[DEBUG] Verbose logging enabled' : '[DEBUG] Verbose logging disabled'
+  );
+});

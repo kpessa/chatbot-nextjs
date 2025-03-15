@@ -3,16 +3,9 @@
 import * as React from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChatModel } from "@/lib/types";
 
-export type Model = {
-  id: string;
-  name: string;
-  provider: "openai" | "anthropic" | "deepseek" | "other";
-  description?: string;
-  maxTokens?: number;
-  supportsFiles?: boolean;
-  fileTypes?: string[];
-};
+export type Model = ChatModel;
 
 export interface ModelSelectorProps {
   models: Model[];

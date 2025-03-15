@@ -3,7 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { sendMessage, uploadFile } from './api-service';
 import { useChat } from './chat-context';
-import { Attachment, Message } from './types';
+import { Attachment } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
 /**

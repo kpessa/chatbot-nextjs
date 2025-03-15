@@ -1,5 +1,20 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ChatInterface } from "./ChatInterface";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ChatProvider } from "@/lib/chat-context";
+import { useState } from "react";
+import { StorybookDecorator } from "../StorybookDecorator";
+import type { Message, ChatModel } from "@/lib/types";
+
+// Create a QueryClient for Storybook
+const createQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const meta: Meta<typeof ChatInterface> = {
   title: "Templates/ChatInterface",
@@ -8,130 +23,96 @@ const meta: Meta<typeof ChatInterface> = {
     layout: "fullscreen",
   },
   tags: ["autodocs"],
-};
+  decorators: [
+    (Story) => {
+      const [queryClient] = useState(() => createQueryClient());
+      
+      return (
+        <StorybookDecorator>
+          <QueryClientProvider client={queryClient}>
+            <ChatProvider>
+              <Story />
+            </ChatProvider>
+          </QueryClientProvider>
+        </StorybookDecorator>
+      );
+    },
+  ],
+} satisfies Meta<typeof ChatInterface>;
 
 export default meta;
-type Story = StoryObj<typeof ChatInterface>;
+type Story = StoryObj<typeof meta>;
 
-const mockModels = [
+const mockMessages: Message[] = [
+  {
+    id: "1",
+    role: "user",
+    content: "Hello, how are you?",
+    timestamp: Date.now(),
+  },
+  {
+    id: "2",
+    role: "assistant",
+    content: "I am doing well, thank you for asking! How can I help you today?",
+    timestamp: Date.now(),
+  },
+];
+
+const mockModels: ChatModel[] = [
   {
     id: "gpt-4",
     name: "GPT-4",
-    provider: "openai" as const,
-    description: "Most capable OpenAI model for complex tasks",
+    provider: "openai",
     maxTokens: 8192,
-    supportsFiles: true,
-    fileTypes: ["image/png", "image/jpeg", "application/pdf", "text/plain"],
+    temperature: 0.7,
+    apiKeyRequired: true,
   },
   {
     id: "gpt-3.5-turbo",
     name: "GPT-3.5 Turbo",
-    provider: "openai" as const,
-    description: "Fast and efficient OpenAI model",
+    provider: "openai",
     maxTokens: 4096,
-    supportsFiles: true,
-    fileTypes: ["image/png", "image/jpeg", "application/pdf", "text/plain"],
-  },
-  {
-    id: "claude-3-opus",
-    name: "Claude 3 Opus",
-    provider: "anthropic" as const,
-    description: "Most powerful Anthropic model",
-    maxTokens: 100000,
-    supportsFiles: true,
-    fileTypes: ["image/png", "image/jpeg", "application/pdf", "text/plain"],
+    temperature: 0.7,
+    apiKeyRequired: true,
   },
 ];
 
-const mockMessages = [
-  {
-    id: "1",
-    content: "Hello! How can I assist you today?",
-    isUser: false,
-    timestamp: "2023-06-15T10:30:00Z",
-  },
-  {
-    id: "2",
-    content: "I need help with my project. Can you explain how to use React hooks?",
-    isUser: true,
-    timestamp: "2023-06-15T10:31:00Z",
-  },
-  {
-    id: "3",
-    content: "React hooks are functions that let you use state and other React features without writing a class. Here's a simple example of the useState hook:",
-    isUser: false,
-    timestamp: "2023-06-15T10:32:00Z",
-  },
-  {
-    id: "4",
-    content: "```jsx\nfunction Counter() {\n  const [count, setCount] = useState(0);\n  \n  return (\n    <div>\n      <p>You clicked {count} times</p>\n      <button onClick={() => setCount(count + 1)}>\n        Click me\n      </button>\n    </div>\n  );\n}\n```",
-    isUser: false,
-    timestamp: "2023-06-15T10:32:30Z",
-  },
-  {
-    id: "5",
-    content: "That's really helpful, thank you! Can you also explain useEffect?",
-    isUser: true,
-    timestamp: "2023-06-15T10:33:00Z",
-  },
-  {
-    id: "6",
-    content: "Here's a diagram that explains the React component lifecycle with useEffect:",
-    isUser: false,
-    timestamp: "2023-06-15T10:34:00Z",
-    files: [
-      {
-        name: "react-lifecycle.png",
-        type: "image/png",
-        url: "https://via.placeholder.com/300x200",
-        size: 1024 * 50, // 50KB
-      },
-    ],
-  },
-];
+const loadingMessage: Message = {
+  id: "loading",
+  role: "assistant",
+  content: "Thinking...",
+  timestamp: Date.now(),
+};
 
 export const Default: Story = {
   args: {
-    title: "AI Assistant",
-    models: mockModels,
-    selectedModel: "gpt-4",
-    onModelChange: (modelId) => console.log(`Selected model: ${modelId}`),
+    title: "Chat Interface",
     messages: mockMessages,
-    onSendMessage: (message, files) => {
-      console.log("Message:", message);
-      console.log("Files:", files);
+    onSendMessage: (message: string) => {
+      console.log("Message sent:", message);
     },
-    onSettingsClick: () => console.log("Settings clicked"),
-    onInfoClick: () => console.log("Info clicked"),
-    allowFiles: true,
-    maxFileSize: 10,
-    allowedFileTypes: ["image/png", "image/jpeg", "application/pdf", "text/plain"],
-  },
-  parameters: {
-    layout: "fullscreen",
+    onRetry: () => console.log("Retrying"),
+    onClearConversation: () => console.log("Clearing conversation"),
+    models: mockModels,
+    selectedModel: mockModels[0].id,
+    onModelChange: (modelId: string) => console.log("Model changed:", modelId),
+    status: "idle",
   },
 };
 
 export const WithLoadingMessage: Story = {
   args: {
     ...Default.args,
-    messages: [
-      ...mockMessages,
-      {
-        id: "loading",
-        content: "",
-        isUser: false,
-        timestamp: new Date().toISOString(),
-        isLoading: true,
-      },
-    ],
+    messages: [...mockMessages, loadingMessage],
+    status: "loading",
   },
 };
 
-export const EmptyChat: Story = {
+export const Empty: Story = {
   args: {
     ...Default.args,
     messages: [],
+    status: "idle",
   },
 };
 
@@ -140,4 +121,64 @@ export const Disabled: Story = {
     ...Default.args,
     disabled: true,
   },
+};
+
+export const DarkMode: Story = {
+  args: {
+    ...Default.args,
+  },
+  decorators: [
+    (Story) => {
+      const [queryClient] = useState(() => createQueryClient());
+      
+      return (
+        <StorybookDecorator isDark>
+          <QueryClientProvider client={queryClient}>
+            <ChatProvider>
+              <Story />
+            </ChatProvider>
+          </QueryClientProvider>
+        </StorybookDecorator>
+      );
+    },
+  ],
+};
+
+export const WithCurrentMessage: Story = {
+  args: {
+    title: "Chat Interface",
+    messages: mockMessages,
+    onSendMessage: (message) => console.log("Sending message:", message),
+    onRetry: () => console.log("Retrying"),
+    onClearConversation: () => console.log("Clearing conversation"),
+    currentMessage: {
+      id: "current",
+      role: "assistant",
+      content: "I'm thinking...",
+      timestamp: Date.now()
+    },
+    models: [],
+    selectedModel: "",
+    onModelChange: () => {}
+  }
+};
+
+export const Loading: Story = {
+  args: {
+    title: "Chat Interface",
+    messages: mockMessages,
+    onSendMessage: (message) => console.log("Sending message:", message),
+    onRetry: () => console.log("Retrying"),
+    onClearConversation: () => console.log("Clearing conversation"),
+    currentMessage: {
+      id: "current",
+      role: "assistant",
+      content: "I'm thinking...",
+      timestamp: Date.now()
+    },
+    status: "loading",
+    models: [],
+    selectedModel: "",
+    onModelChange: () => {}
+  }
 }; 

@@ -8,7 +8,6 @@ import { FileAttachment } from "@/components/molecules/FileAttachment";
 import { FilePreview } from "@/components/molecules/FilePreview";
 import { UploadProgress } from "@/components/molecules/UploadProgress";
 import { useChatQuery } from "@/lib/use-chat-query";
-import { useChat } from "@/lib/chat-context";
 import { useScreenshotPaste } from "@/lib/hooks/useScreenshotPaste";
 import { Attachment } from "@/lib/types";
 import { validateFile } from "@/lib/file-utils";
@@ -20,6 +19,7 @@ export interface ChatInputProps {
   maxFileSize?: number; // in MB
   allowedFileTypes?: string[];
   className?: string;
+  onSendMessage?: (message: string, attachments?: Attachment[]) => void;
 }
 
 interface FileUploadState {
@@ -39,9 +39,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
   maxFileSize = 10, // 10MB default
   allowedFileTypes = ["image/png", "image/jpeg", "application/pdf", "text/plain"],
   className,
+  onSendMessage,
 }) => {
-  const { state } = useChat();
-  const { sendMessage, uploadFile, isProcessing } = useChatQuery();
+  // Get the chat query hook
+  const chatQueryHook = useChatQuery();
+  
   const [message, setMessage] = React.useState("");
   const [files, setFiles] = React.useState<File[]>([]);
   const [attachments, setAttachments] = React.useState<Attachment[]>([]);
@@ -50,7 +52,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   // Disable the input if processing
-  const isDisabled = disabled || isProcessing || Object.values(uploadStates).some(
+  const isDisabled = disabled || chatQueryHook.isProcessing || Object.values(uploadStates).some(
     state => state.status === "uploading" || state.status === "processing"
   );
 
@@ -68,83 +70,85 @@ const ChatInput: React.FC<ChatInputProps> = ({
     enabled: allowFiles && !isDisabled,
   });
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (message.trim() || attachments.length > 0) {
-      // Upload any files that haven't been uploaded yet
-      if (files.length > 0) {
-        try {
-          const newAttachments = await Promise.all(
-            files.map(async (file) => {
-              // Create upload state for this file
-              const fileId = `${file.name}-${Date.now()}`;
-              setUploadStates(prev => ({
-                ...prev,
-                [fileId]: { file, progress: 0, status: "uploading" }
-              }));
-
-              try {
-                // Simulate upload progress
-                const progressInterval = setInterval(() => {
-                  setUploadStates(prev => {
-                    const current = prev[fileId];
-                    if (current && current.status === "uploading" && current.progress < 90) {
-                      return {
-                        ...prev,
-                        [fileId]: { ...current, progress: current.progress + 10 }
-                      };
-                    }
-                    return prev;
-                  });
-                }, 500);
-
-                // Upload the file
-                const result = await uploadFile(file);
-
-                // Clear interval and set complete
-                clearInterval(progressInterval);
-                setUploadStates(prev => ({
-                  ...prev,
-                  [fileId]: { file, progress: 100, status: "complete" }
-                }));
-
-                return result;
-              } catch (error) {
-                setUploadStates(prev => ({
-                  ...prev,
-                  [fileId]: { file, progress: 0, status: "error" }
-                }));
-                throw error;
-              }
-            })
-          );
-          
-          // Add the new attachments to the existing ones
-          const allAttachments = [...attachments, ...newAttachments];
-          
-          // Send the message with attachments
-          await sendMessage(message.trim(), allAttachments);
-
-          // Clear upload states
-          setUploadStates({});
-        } catch (error) {
-          console.error("Error uploading files:", error);
-        }
-      } else {
-        // Send the message with existing attachments
-        await sendMessage(message.trim(), attachments.length > 0 ? attachments : undefined);
-      }
+  // Handle file uploads
+  const handleFileUpload = async (file: File) => {
+    const fileId = `${file.name}-${Date.now()}`;
+    
+    try {
+      // Set upload state to uploading
+      setUploadStates(prev => ({
+        ...prev,
+        [fileId]: { file, progress: 0, status: "uploading" }
+      }));
       
-      // Clear the input
-      setMessage("");
-      setFiles([]);
-      setAttachments([]);
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadStates(prev => {
+          const current = prev[fileId];
+          if (current && current.status === "uploading" && current.progress < 90) {
+            return {
+              ...prev,
+              [fileId]: { ...current, progress: current.progress + 10 }
+            };
+          }
+          return prev;
+        });
+      }, 300);
+      
+      // Upload the file
+      const attachment = await chatQueryHook.uploadFile(file);
+      
+      // Clear interval and set complete
+      clearInterval(progressInterval);
+      setUploadStates(prev => ({
+        ...prev,
+        [fileId]: { file, progress: 100, status: "complete" }
+      }));
+      
+      // Add the attachment
+      setAttachments(prev => [...prev, attachment]);
+      
+      return attachment;
+    } catch (error) {
+      // Set error state
+      setUploadStates(prev => ({
+        ...prev,
+        [fileId]: { file, progress: 0, status: "error" }
+      }));
+      
+      console.error("Failed to upload file:", error);
+      return null;
+    }
+  };
+
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    if (!message.trim() && attachments.length === 0) return;
+    
+    const currentMessage = message;
+    const currentAttachments = [...attachments];
+    
+    // Clear the input
+    setMessage("");
+    setAttachments([]);
+    setFiles([]);
+    
+    try {
+      // If onSendMessage prop is provided, use it instead of chatQueryHook
+      if (onSendMessage) {
+        onSendMessage(currentMessage, currentAttachments);
+      } else {
+        await chatQueryHook.sendMessage(currentMessage, currentAttachments);
+      }
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      console.error("Error: Failed to send message. Please try again.");
     }
   };
 
   // Handle file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files);
       
@@ -157,7 +161,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
         return validation.isValid;
       });
       
-      setFiles((prevFiles) => [...prevFiles, ...validFiles]);
+      // Add files to state
+      setFiles(prev => [...prev, ...validFiles]);
+      
+      // Upload files
+      for (const file of validFiles) {
+        await handleFileUpload(file);
+      }
     }
     
     // Reset the input value so the same file can be selected again
@@ -186,7 +196,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={handleSendMessage}
       className={cn("flex flex-col space-y-2 w-full", className)}
     >
       {/* File previews */}
@@ -237,7 +247,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                handleSubmit(e);
+                handleSendMessage();
               }
             }}
           />

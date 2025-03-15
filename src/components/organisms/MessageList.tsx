@@ -6,18 +6,19 @@ import { MessageBubble } from "@/components/molecules/MessageBubble";
 import { FileAttachment } from "@/components/molecules/FileAttachment";
 
 export type MessageFile = {
+  id: string;
   name: string;
   type: string;
   url: string;
-  size?: number;
+  size: number;
 };
 
 export type Message = {
   id: string;
   content: string;
-  isUser: boolean;
-  timestamp: string;
-  files?: MessageFile[];
+  role: 'user' | 'assistant' | 'system';
+  timestamp: number;
+  attachments?: MessageFile[];
   isLoading?: boolean;
 };
 
@@ -45,7 +46,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
     try {
       const date = new Date(timestamp);
       return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    } catch (error) {
+    } catch {
       return timestamp; // Return as is if it's already formatted
     }
   };
@@ -57,21 +58,21 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
           key={message.id}
           className={cn(
             "flex flex-col",
-            message.isUser ? "items-end" : "items-start"
+            message.role === 'user' ? "items-end" : "items-start"
           )}
         >
           {/* Message bubble */}
           <MessageBubble
             content={message.content}
-            isUser={message.isUser}
-            timestamp={formatTimestamp(message.timestamp)}
+            isUser={message.role === 'user'}
+            timestamp={formatTimestamp(message.timestamp.toString())}
             isLoading={message.isLoading}
           />
 
           {/* File attachments */}
-          {message.files && message.files.length > 0 && (
+          {message.attachments && message.attachments.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2 max-w-[80%] md:max-w-[70%]">
-              {message.files.map((file, index) => (
+              {message.attachments.map((file, index) => (
                 <div key={`${file.name}-${index}`} className="w-full sm:w-48">
                   <FileAttachment file={file} />
                 </div>

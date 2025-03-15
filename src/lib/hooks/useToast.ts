@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useToast as useShadcnToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 interface UseToastOptions {
   duration?: number;
@@ -7,58 +7,46 @@ interface UseToastOptions {
 
 /**
  * Custom hook for managing toast notifications
- * Wraps ShadcnUI's useToast hook with common notification patterns
+ * Wraps sonner's toast function with common notification patterns
  */
 export const useToast = (options: UseToastOptions = {}) => {
-  const { toast } = useShadcnToast();
   const { duration = 3000 } = options;
 
   const showSuccess = React.useCallback(
     (message: string) => {
-      toast({
-        title: "Success",
-        description: message,
+      toast.success(message, {
         duration,
-        variant: "default",
       });
     },
-    [toast, duration]
+    [duration]
   );
 
   const showError = React.useCallback(
     (message: string) => {
-      toast({
-        title: "Error",
-        description: message,
+      toast.error(message, {
         duration,
-        variant: "destructive",
       });
     },
-    [toast, duration]
+    [duration]
   );
 
   const showWarning = React.useCallback(
     (message: string) => {
-      toast({
-        title: "Warning",
-        description: message,
+      toast(message, {
         duration,
-        variant: "default",
         className: "bg-yellow-100 dark:bg-yellow-900",
       });
     },
-    [toast, duration]
+    [duration]
   );
 
   const showInfo = React.useCallback(
     (message: string) => {
-      toast({
-        description: message,
+      toast(message, {
         duration,
-        variant: "default",
       });
     },
-    [toast, duration]
+    [duration]
   );
 
   return {

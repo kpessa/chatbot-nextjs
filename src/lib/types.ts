@@ -14,8 +14,8 @@ export interface Attachment {
 
 export interface Message {
   id: string;
-  role: MessageRole;
   content: string;
+  role: MessageRole;
   timestamp: number;
   attachments?: Attachment[];
   isLoading?: boolean;
@@ -26,9 +26,12 @@ export interface ChatModel {
   id: string;
   name: string;
   provider: 'openai' | 'anthropic' | 'deepseek' | 'custom';
-  maxTokens?: number;
-  temperature?: number;
-  apiKeyRequired?: boolean;
+  maxTokens: number;
+  temperature: number;
+  apiKeyRequired: boolean;
+  description?: string;
+  supportsFiles?: boolean;
+  fileTypes?: string[];
 }
 
 export interface ChatSettings {
@@ -36,7 +39,7 @@ export interface ChatSettings {
   temperature: number;
   maxTokens: number;
   apiKeys: Record<string, string>;
-  theme: 'light' | 'dark' | 'system';
+  theme: string;
 }
 
 export interface ChatState {

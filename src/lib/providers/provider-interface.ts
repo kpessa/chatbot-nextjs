@@ -2,26 +2,7 @@
  * Provider interface for LLM API services
  */
 
-import { Message } from '../types';
-
-export interface ProviderMessage {
-  role: string;
-  content: string;
-}
-
-export interface ProviderRequestOptions {
-  model: string;
-  messages: ProviderMessage[];
-  temperature: number;
-  maxTokens: number;
-  apiKey: string;
-}
-
-export interface ProviderResponse {
-  id: string;
-  content: string;
-  role: 'assistant';
-}
+import { ProviderRequestOptions, ProviderResponse } from './provider-types';
 
 export interface LLMProvider {
   sendMessage: (options: ProviderRequestOptions) => Promise<ProviderResponse>;
