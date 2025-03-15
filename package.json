@@ -85,7 +85,8 @@
     ]
   },
   "overrides": {
-  "eslint-plugin-storybook": {
-    "typescript": "$typescript"
+    "eslint-plugin-storybook": {
+      "typescript": "$typescript"
+    }
   }
 }
