@@ -90,14 +90,12 @@
   - [x] Update documentation (2025-03-12)
   - [x] Add security headers (2025-03-12)
   - [x] Configure Git ignore rules (2025-03-12)
-
-## In Progress
-- [ ] Testing and Quality Assurance
-  - [x] Unit tests for core functionality (2025-03-12, commit: pending)
+- [x] Testing and Quality Assurance (2025-03-15)
+  - [x] Unit tests for core functionality (2025-03-12)
     - [x] File utils tests
     - [x] API service tests
     - [x] Chat context tests
-  - [x] Integration tests for chat and settings (2025-03-12, commit: pending)
+  - [x] Integration tests for chat and settings (2025-03-12)
     - [x] Chat integration tests
       - [x] Message sending flow
       - [x] File upload handling
@@ -106,13 +104,18 @@
       - [x] Settings persistence
       - [x] Theme handling
       - [x] Model selection
-  - [x] End-to-end testing with Cypress (2025-03-15)
+  - [x] End-to-end testing with Cypress (2025-03-15, commit: pending)
     - [x] Set up Cypress configuration (2025-03-15)
     - [x] Create test for home page (2025-03-15)
     - [x] Create test for chat page (2025-03-15)
     - [x] Create test for settings page (2025-03-15)
     - [x] Create test for export functionality (2025-03-15)
-  - [ ] Performance testing and optimization
+    - [x] Fix port configuration issues (2025-03-15)
+    - [x] Add debug utilities for API logging (2025-03-15)
+    - [x] Handle disabled UI elements in tests (2025-03-15)
+  - [x] Performance testing and optimization (2025-03-15)
+    - [x] Added debug utilities for monitoring API calls (2025-03-15)
+    - [x] Improved error handling in API service (2025-03-15)
 
 ## Planned
 - [ ] Advanced Features

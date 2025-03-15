@@ -4,6 +4,13 @@
 
 import { Message, ChatModel, Attachment } from './types';
 import { getUserFriendlyErrorMessage } from './api/error-handling';
+import { debugLog, logApiRequest, logApiResponse } from './debug';
+
+// Extended Attachment type for internal use
+interface ExtendedAttachment extends Attachment {
+  file?: File;
+  previewUrl?: string;
+}
 
 interface SendMessageParams {
   message: string;
@@ -12,7 +19,7 @@ interface SendMessageParams {
   maxTokens: number;
   apiKey?: string;
   conversationHistory: Message[];
-  attachments?: Attachment[];
+  attachments?: ExtendedAttachment[];
 }
 
 interface ApiResponse {
@@ -35,6 +42,8 @@ export async function sendMessage({
   attachments,
 }: SendMessageParams): Promise<ApiResponse> {
   try {
+    debugLog('Starting sendMessage with:', { message, model, temperature, maxTokens });
+    
     // Format the conversation history for the API
     const formattedHistory = conversationHistory.map(({ role, content }) => ({
       role,
@@ -52,6 +61,7 @@ export async function sendMessage({
     
     // Add attachments if any
     if (attachments && attachments.length > 0) {
+      debugLog('Adding attachments:', attachments.length);
       attachments.forEach((attachment) => {
         // If the attachment has a file property, add it to the form data
         if (attachment.file) {
@@ -60,22 +70,30 @@ export async function sendMessage({
       });
     }
 
+    // Prepare request data
+    const requestData = {
+      model: model.id,
+      messages: formattedHistory,
+      temperature,
+      max_tokens: maxTokens,
+      provider: model.provider,
+    };
+    
+    debugLog('Request data:', requestData);
+
     // Add the request data
-    formData.append(
-      'request',
-      JSON.stringify({
-        model: model.id,
-        messages: formattedHistory,
-        temperature,
-        max_tokens: maxTokens,
-        provider: model.provider,
-      })
-    );
+    formData.append('request', JSON.stringify(requestData));
 
     // Add the API key if provided
     if (apiKey) {
+      debugLog('API key provided for provider:', model.provider);
       formData.append('api_key', apiKey);
+    } else {
+      debugLog('No API key provided for provider:', model.provider);
     }
+
+    // Log the API request
+    logApiRequest('/api/chat', 'POST', requestData);
 
     // Send the request to the API
     const response = await fetch('/api/chat', {
@@ -85,10 +103,14 @@ export async function sendMessage({
 
     if (!response.ok) {
       const errorData = await response.json();
+      debugLog('API error response:', errorData);
+      logApiResponse('/api/chat', response.status, errorData, new Error(errorData.message));
       throw new Error(errorData.message || 'Failed to send message');
     }
 
     const data = await response.json();
+    debugLog('API success response:', data);
+    logApiResponse('/api/chat', response.status, data);
 
     return {
       id: data.id,
@@ -96,8 +118,9 @@ export async function sendMessage({
       role: 'assistant',
       timestamp: Date.now(),
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error sending message:', error);
+    debugLog('Error in sendMessage:', error);
     // Convert to user-friendly error message
     const friendlyMessage = getUserFriendlyErrorMessage(error);
     throw new Error(friendlyMessage);
@@ -107,10 +130,15 @@ export async function sendMessage({
 /**
  * Uploads a file and returns the attachment object
  */
-export async function uploadFile(file: File): Promise<Attachment> {
+export async function uploadFile(file: File): Promise<ExtendedAttachment> {
   try {
+    debugLog('Starting uploadFile with:', { fileName: file.name, fileSize: file.size, fileType: file.type });
+    
     const formData = new FormData();
     formData.append('file', file);
+
+    // Log the API request
+    logApiRequest('/api/upload', 'POST', { fileName: file.name, fileSize: file.size });
 
     const response = await fetch('/api/upload', {
       method: 'POST',
@@ -119,10 +147,14 @@ export async function uploadFile(file: File): Promise<Attachment> {
 
     if (!response.ok) {
       const errorData = await response.json();
+      debugLog('Upload API error response:', errorData);
+      logApiResponse('/api/upload', response.status, errorData, new Error(errorData.message));
       throw new Error(errorData.message || 'Failed to upload file');
     }
 
     const data = await response.json();
+    debugLog('Upload API success response:', data);
+    logApiResponse('/api/upload', response.status, data);
 
     return {
       id: data.id,
@@ -133,8 +165,9 @@ export async function uploadFile(file: File): Promise<Attachment> {
       previewUrl: data.previewUrl,
       file: file,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error uploading file:', error);
+    debugLog('Error in uploadFile:', error);
     // Convert to user-friendly error message
     const friendlyMessage = getUserFriendlyErrorMessage(error);
     throw new Error(friendlyMessage);
