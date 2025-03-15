@@ -83,5 +83,9 @@
     "extends": [
       "plugin:storybook/recommended"
     ]
+  },
+  "overrides": {
+  "eslint-plugin-storybook": {
+    "typescript": "$typescript"
   }
 }
