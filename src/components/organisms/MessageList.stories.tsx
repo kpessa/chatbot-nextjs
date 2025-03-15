@@ -229,7 +229,7 @@ const InteractiveChatTemplate = () => {
       <div className="mt-2">Message States:</div>
       {messages.map(msg => (
         <div key={msg.id} className="ml-2">
-          ID: {msg.id.slice(0, 8)}... | Role: {msg.role} | Loading: {msg.isLoading ? 'true' : 'false'}
+          ID: {msg.id ? `${msg.id.slice(0, 8)}...` : 'no-id'} | Role: {msg.role} | Loading: {msg.isLoading ? 'true' : 'false'}
         </div>
       ))}
     </div>

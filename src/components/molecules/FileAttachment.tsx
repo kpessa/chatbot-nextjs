@@ -42,7 +42,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
       {isImage ? (
         <div className="relative w-full h-48">
           <Image
-            src={file.url}
+            src={file.url || '/placeholder-image.png'}
             alt={file.name}
             fill
             className="object-cover"

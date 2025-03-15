@@ -5,6 +5,7 @@
 export type MessageRole = 'user' | 'assistant' | 'system';
 
 export interface Attachment {
+  id: string;
   name: string;
   type: string;
   size: number;
@@ -24,10 +25,13 @@ export interface Message {
 export interface ChatModel {
   id: string;
   name: string;
-  provider: 'openai' | 'anthropic' | 'deepseek';
+  provider: 'openai' | 'anthropic' | 'deepseek' | 'custom';
   maxTokens: number;
   temperature: number;
   apiKeyRequired: boolean;
+  description?: string;
+  supportsFiles?: boolean;
+  fileTypes?: string[];
 }
 
 export interface ChatSettings {
